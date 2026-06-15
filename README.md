@@ -43,7 +43,7 @@ Siga as instruções abaixo para rodar o ambiente de desenvolvimento na sua máq
 
 1. ### Clone o repositório:
 ```bash
-   git clone [https://github.com/nicthecreator/projeto-website-django-ecommerce.git](https://github.com/nicthecreator/projeto-website-django-ecommerce.git)
+   git clone https://github.com/nicthecreator/projeto-website-django-ecommerce.git
    cd projeto-website-django-ecommerce
    ```
    

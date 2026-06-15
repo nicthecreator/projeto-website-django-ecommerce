@@ -1,0 +1,24 @@
+{% load static %}
+<main class="container">
+        
+        <div class="product-grid">
+            
+            {% for produto in produtos %}
+            <div class="product-card">
+                <div class="badge-avaria"><i class="fa-solid fa-triangle-exclamation"></i> {{ produto.avaria }}</div>
+                <img src="{{ produto.imagem_url }}" alt="{{ produto.nome }}">
+                <div class="product-info">
+                    <h4>{{ produto.nome }}</h4>
+                    <div class="prices">
+                        <span class="old-price">R$ {{ produto.preco_original|floatformat:2 }}</span>
+                        <span class="new-price">R$ {{ produto.preco_desconto|floatformat:2 }}</span>
+                    </div>
+                    <button class="btn-comprar" onclick="adicionarAoCarrinho()">Adicionar ao Carrinho</button>
+                </div>
+            </div>
+            {% empty %}
+            <p>Nenhum produto disponível no momento.</p>
+            {% endfor %}
+
+        </div>
+    </main>

@@ -1,0 +1,32 @@
+body, html {
+            height: 100%;
+            margin: 0;
+        }
+        .container-central {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f7f6; /* Cor de fundo padrão do seu site */
+        }
+        .resend-link {
+            display: block;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+            text-decoration: none;
+            transition: color 0.3s;
+            cursor: pointer;
+            background: none;
+            border: none;
+            width: 100%;
+        }
+        .resend-link:hover {
+            color: #C0333D; /* Vermelho padrão da sua marca */
+            text-decoration: underline;
+        }
+        .resend-link:disabled {
+            color: #ccc;
+            cursor: not-allowed;
+            text-decoration: none;
+        }

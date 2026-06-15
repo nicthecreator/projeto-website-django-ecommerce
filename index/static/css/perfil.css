@@ -1,0 +1,271 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    /* Cor de fundo semelhante à da imagem para dar destaque ao card branco */
+    background-color: #127586; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Atualize a classe page-container que já existia ou adicione caso não tenha */
+.page-container {
+    display: flex;
+    justify-content: center;
+    /* Altera de flex-start para stretch: força os dois blocos a terem a mesma altura */
+    align-items: stretch; 
+    gap: 35px; /* Espaço elegante entre os dois blocos */
+    max-width: 1350px; /* Aumentado significativamente para ocupar uma área maior da tela */
+    margin: 40px auto;
+    padding: 0 20px;
+    width: 100%;
+}
+
+/* --- ESTILOS DO MENU LATERAL (SIDEBAR) --- */
+/* --- MENU LATERAL (SIDEBAR) --- */
+.sidebar-card {
+    background-color: #ffffff;
+    width: 340px; /* Largura um pouco maior para equilibrar com a tela expandida */
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column; /* Permite controlar o crescimento dos elementos internos */
+}
+
+.sidebar-user-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 30px 25px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.sidebar-user-info h3 {
+    font-size: 1rem;
+    color: #333;
+    font-weight: 600;
+}
+
+.sidebar-user-info p {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.sidebar-menu {
+    padding: 15px 0;
+    display: flex;
+    flex-direction: column;
+    /* Faz o menu preencher o espaço vertical e empurrar o botão Sair para a base exata do card */
+    flex: 1; 
+}
+
+.menu-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    color: #555;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.menu-item:hover {
+    background-color: #f8fafc;
+    color: #3b82f6;
+}
+
+.menu-item.active {
+    background-color: #f0fdf4; /* Fundo verde clarinho ou azul conforme preferir */
+    color: #3b82f6;
+    font-weight: 500;
+    border-right: 3px solid #3b82f6;
+}
+
+.menu-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.menu-left i {
+    font-size: 1.1rem;
+    width: 20px; /* Garante que os ícones fiquem alinhados */
+    text-align: center;
+}
+
+.menu-item .fa-chevron-right {
+    font-size: 0.8rem;
+    color: #ccc;
+}
+
+.sidebar-footer {
+    border-top: 1px solid #f0f0f0;
+    padding: 10px 0;
+}
+
+.menu-item.logout:hover {
+    color: #dc2626;
+    background-color: #fef2f2;
+}
+
+/* Opcional: responsividade para celular. Empilha os cards se a tela for pequena */
+@media (max-width: 768px) {
+    .page-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    .sidebar-card, .profile-card {
+        width: 100%;
+        max-width: 600px;
+    }
+}
+
+.profile-card {
+    background-color: #ffffff;
+    /* Faz o painel se expandir e ocupar de forma responsiva todo o restante da tela ampliada */
+    flex: 1; 
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Cabeçalho (Foto, Nome e Botão Fechar) */
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 40px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.avatar-container {
+    position: relative;
+}
+
+.avatar-img {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.edit-avatar-btn {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    background-color: #fff;
+    border: 1px solid #eee;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    color: #555;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.user-details h2 {
+    font-size: 1.2rem;
+    color: #333;
+    font-weight: 600;
+}
+
+.user-details p {
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.close-btn {
+    color: #666;
+    font-size: 1.2rem;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.close-btn:hover {
+    color: #dc2626;
+}
+
+/* Linhas do Formulário */
+.form-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.form-row label {
+    color: #444;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.form-row input {
+    border: none;
+    outline: none;
+    text-align: right;
+    font-size: 0.95rem;
+    color: #666;
+    background: transparent;
+    width: 60%;
+}
+
+.form-row input::placeholder {
+    color: #aaa;
+}
+
+.form-row input:focus {
+    color: #2563eb;
+}
+
+.readonly-input {
+    color: #aaa !important;
+    cursor: not-allowed;
+}
+
+/* Botão Salvar */
+.form-actions {
+    margin-top: 30px;
+}
+
+.btn-save {
+    background-color: #3b82f6; /* Azul do botão da imagem */
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-save:hover {
+    background-color: #2563eb;
+}
+
+.messages {
+    margin-top: 20px;
+    text-align: right;
+    font-size: 0.9rem;
+}
+.msg-success { color: #16a34a; }
+.msg-error { color: #dc2626; }

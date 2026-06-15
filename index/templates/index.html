@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHD Store - Oportunidades em Alimentos</title>
+    <link rel="stylesheet" href="{% static "css/style.css" %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="{% static 'home/images/favicon.ico' %}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h1>PHD <span>Store</span></h1>
+        </div>
+        <div class="nav-actions">
+    {% if user.is_authenticated %}
+        <a href="{% url 'perfil' %}" class="profile-link" id="profileBtn">
+            <i class="fa-solid fa-circle-user"></i> Olá, {{ user.first_name|default:"Usuário" }}
+        </a>
+        
+        <a href="{% url 'logout' %}" class="logout-link" style="margin-left: 15px;">
+            <i class="fa-solid fa-right-from-bracket"></i> Sair
+        </a>
+    {% else %}
+        <a href="{% url 'login' %}" class="login-link">
+            <i class="fa-solid fa-user"></i> Fazer Login
+        </a>
+    {% endif %}
+
+    <a href="#" id="cart-btn" style="margin-left: 15px;">
+        <i class="fa-solid fa-cart-shopping"></i> Carrinho (<span id="cart-count">0</span>)
+    </a>
+</div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h2>Qualidade intacta. Preços que cabem no bolso.</h2>
+            <p>Aproveite nossos produtos alimentícios com pequenas avarias estéticas na embalagem e descontos de até 70%!</p>
+        </div>
+    </header>
+
+
+    {% include "global/partials/produtos.html" %}
+    
+
+    <footer>
+        <p>PHD Store © Todos os direitos reservados</p>
+        <p class="footer-slogan">Para tudo na vida existe várias coisas, para logística do seu produto existe o Grupo PHD</p>
+    </footer>
+
+    <script src={% static 'js/index.js' %}></script>
+</body>
+</html>

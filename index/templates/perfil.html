@@ -1,0 +1,104 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHD Store - Meu Perfil</title>
+    <link rel="stylesheet" href="{% static 'css/perfil.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="page-container">
+        
+        <aside class="sidebar-card">
+            <div class="sidebar-user-header">
+                <img src="https://via.placeholder.com/60" alt="Avatar" class="avatar-img">
+                <div class="sidebar-user-info">
+                    <h3>{{ user.first_name|default:"Seu Nome" }}</h3>
+                    <p>{{ user.email }}</p>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="{% url 'perfil' %}" class="menu-item active">
+                    <div class="menu-left"><i class="fa-regular fa-user"></i> Perfil</div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+                <a href="#" class="menu-item">
+                    <div class="menu-left"><i class="fa-solid fa-gear"></i> Configurações</div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+                <a href="#" class="menu-item">
+                    <div class="menu-left"><i class="fa-solid fa-box-open"></i> Minhas Compras</div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+                <a href="#" class="menu-item">
+                    <div class="menu-left"><i class="fa-solid fa-clock-rotate-left"></i> Histórico de Compras</div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="{% url 'logout' %}" class="menu-item logout">
+                    <div class="menu-left"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</div>
+                </a>
+            </div>
+        </aside>
+
+        <main class="profile-card">
+            <div class="profile-header">
+                <div class="user-info">
+                    <div class="avatar-container">
+                        <img src="https://via.placeholder.com/60" alt="Avatar" class="avatar-img">
+                        <button class="edit-avatar-btn"><i class="fa-solid fa-pen"></i></button>
+                    </div>
+                    <div class="user-details">
+                        <h2>{{ user.first_name|default:"Seu Nome" }}</h2>
+                        <p>{{ user.email }}</p>
+                    </div>
+                </div>
+                <a href="{% url 'index' %}" class="close-btn"><i class="fa-solid fa-xmark"></i></a>
+            </div>
+
+            <form method="POST" action="{% url 'perfil' %}" id="perfilForm">
+                {% csrf_token %}
+                
+                <div class="form-row">
+                    <label>Name</label>
+                    <input type="text" name="nome" value="{{ user.first_name }}" placeholder="Your name">
+                </div>
+                
+                <div class="form-row">
+                    <label>Email account</label>
+                    <input type="email" name="email" value="{{ user.email }}" readonly class="readonly-input">
+                </div>
+                
+                <div class="form-row">
+                    <label>Mobile number</label>
+                    <input type="text" name="telefone" placeholder="Add number">
+                </div>
+                
+                <div class="form-row">
+                    <label>Location</label>
+                    <input type="text" name="localizacao" placeholder="Brasil">
+                </div>
+
+                {% if messages %}
+                    <div class="messages">
+                        {% for message in messages %}
+                            <p class="msg-{{ message.tags }}">{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-save">Save Change</button>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <script src="{% static 'js/perfil.js' %}"></script>
+</body>
+</html>

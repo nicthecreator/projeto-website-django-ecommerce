@@ -6,9 +6,20 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+html {
+    /* Força a barra de rolagem vertical estar sempre presente para evitar 
+       saltos de layout ao transitar entre páginas curtas e longas */
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
 body {
     background-color: #f4f7f6;
     color: #333;
+    overflow-x: hidden;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Navbar */
@@ -35,6 +46,11 @@ body {
 }
 
 
+.nav-actions {
+    display: flex;
+    align-items: center;
+}
+
 .navbar a {
     color: white;
     text-decoration: none;
@@ -55,6 +71,11 @@ body {
     color: #e63946;
 }
 
+.logo-nav {
+    width: 100px;
+    height: 40px;
+}
+
 /* Cor padrão do botão Sair (Branco) */
 .logout-link {
     color: white;
@@ -70,7 +91,7 @@ body {
 
 /* Hero Section */
 .hero {
-    background: linear-gradient(135deg, #1d3557, #457b9d); /* Gradiente azul */
+    background: linear-gradient(135deg, #8d0000, #FF0000); /* Gradiente azul */
     color: white;
     text-align: center;
     padding: 4rem 2rem;
@@ -83,9 +104,11 @@ body {
 
 /* Container & Grid */
 .container {
-    max-width: 1200px;
+    width: 100%;
+    max-width: 1500px;
     margin: 3rem auto;
     padding: 0 2rem;
+    flex: 1; /* Permite que o container empurre o footer para baixo */
 }
 
 .section-title {
@@ -189,17 +212,313 @@ body {
     background-color: #e63946;
 }
 
+.btn-comprar-login {
+    width: 100%;
+    padding: 0.8rem;
+    background-color: #475569;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.85rem;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.btn-comprar-login:hover {
+    background-color: #1e293b;
+    transform: translateY(-2px);
+}
+
 /* Footer */
 footer {
     background-color: #0d1b2a;
     color: white;
     text-align: center;
     padding: 2.5rem;
-    margin-top: 4rem;
+    margin-top: auto;
 }
 
 .footer-slogan {
     margin-top: 0.5rem;
     font-size: 0.9rem;
     color: #ccc;
+}
+
+/* Cart Sidebar */
+.cart-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1001;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.cart-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    transform: translateX(105%); /* Esconde 100% da largura + 5% extra para a sombra */
+    width: 100%;
+    max-width: 400px;
+    height: 100%;
+    background: white;
+    z-index: 1002;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease-in-out;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.cart-sidebar.open {
+    transform: translateX(0);
+}
+
+.cart-overlay.open {
+    display: block;
+    opacity: 1;
+}
+
+.cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.cart-header h3 {
+    color: #1d3557;
+    margin: 0;
+}
+
+#close-cart-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #333;
+    cursor: pointer;
+}
+
+.cart-items {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+
+.cart-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+}
+
+.cart-item img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-right: 1rem;
+}
+
+.cart-item-details {
+    flex-grow: 1;
+}
+
+.cart-item-details h4 {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    color: #1d3557;
+}
+
+.cart-item-price {
+    font-weight: bold;
+    color: #2a9d8f;
+}
+
+.cart-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.cart-item-actions button {
+    background: #eee;
+    border: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-remover {
+    color: #e63946;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-left: auto;
+}
+
+.cart-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #eee;
+    background: #f9f9f9;
+}
+
+.cart-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: #1d3557;
+}
+
+.btn-finalizar {
+    background-color: #0d1b2a;
+}
+.btn-finalizar:hover {
+    background-color: #1c3958;
+}
+
+/* Mobile Menu Styles */
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+}
+
+/* Botão flutuante de carrinho oculto por padrão (aparece só no mobile) */
+.cart-floating-btn {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #e63946;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    font-size: 1.5rem;
+    z-index: 998;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.cart-floating-btn:active {
+    transform: scale(0.9);
+}
+
+.cart-floating-btn .floating-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #1d3557;
+    color: white;
+    font-size: 0.8rem;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    font-weight: bold;
+}
+
+@media (max-width: 1024px) {
+    /* Navbar Hamburger */
+    .mobile-menu-btn {
+        display: block;
+    }
+    
+    .nav-actions {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background-color: #0d1b2a;
+        padding: 0 0 1rem 0;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+    
+    .nav-actions.active {
+        display: flex;
+    }
+
+    .nav-links {
+        flex-direction: column;
+        width: 100%;
+        align-items: flex-start;
+    }
+    
+    .nav-links a {
+        padding: 1rem 5%;
+        width: 100%;
+        margin: 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .cart-btn-nav {
+        margin: 1rem 5% 0 5%;
+        align-self: flex-start;
+        background: #e63946;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+    }
+
+    /* Hero Banner */
+    .hero {
+        padding: 2rem 1rem;
+    }
+    .hero h2 {
+        font-size: 1.5rem;
+    }
+    .hero p {
+        font-size: 0.95rem;
+    }
+    
+    /* Global Container */
+    .container {
+        padding: 0 1rem;
+        margin: 1.5rem auto;
+    }
+    
+    /* Footer */
+    footer {
+        padding: 1.5rem 1rem;
+    }
+    
+    /* Cart Sidebar */
+    .cart-sidebar {
+        max-width: 100%;
+    }
+    
+    /* Mostrar botão flutuante no mobile */
+    .cart-floating-btn {
+        display: flex;
+    }
 }

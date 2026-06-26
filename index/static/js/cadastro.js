@@ -1,5 +1,49 @@
 // home/js/registro.js
 
+// Lógica de autocompletar da matrícula
+document.addEventListener('DOMContentLoaded', function() {
+    const matriculaInput = document.getElementById('matricula');
+    if (matriculaInput) {
+        // Bloqueia letras e limita a 6 dígitos em tempo real
+        matriculaInput.addEventListener('input', function(e) {
+            this.value = this.value.replace(/\D/g, '').substring(0, 6);
+        });
+
+        matriculaInput.addEventListener('blur', function() {
+            const matricula = this.value.trim();
+            const msgBox = document.getElementById('matricula-msg');
+            const nomeInput = document.getElementById('nome');
+            const emailInput = document.getElementById('email');
+
+            if (matricula.length > 0) {
+                msgBox.textContent = 'Buscando colaborador...';
+                msgBox.style.color = '#1d3557';
+
+                fetch(`/buscar-colaborador/?matricula=${matricula}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            msgBox.textContent = 'Colaborador encontrado! Preenchendo dados...';
+                            msgBox.style.color = '#16a34a';
+                            
+                            nomeInput.value = data.nome;
+                        } else {
+                            msgBox.textContent = data.message || 'Erro ao buscar matrícula.';
+                            msgBox.style.color = '#dc2626';
+                            nomeInput.value = '';
+                        }
+                    })
+                    .catch(error => {
+                        msgBox.textContent = 'Erro de conexão.';
+                        msgBox.style.color = '#dc2626';
+                    });
+            } else {
+                msgBox.textContent = '';
+                nomeInput.value = '';
+            }
+        });
+    }
+});
 
 // Lógica para alternar a visibilidade da senha (ativodo tanto na página de login quanto na de criação de conta para reutilização)
 function toggleVisibility(fieldId) {

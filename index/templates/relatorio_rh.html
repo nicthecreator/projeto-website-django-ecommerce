@@ -1,0 +1,92 @@
+{% extends 'global/base.html' %}
+{% load static %}
+
+{% block title %}PHD Store - Relatório RH{% endblock %}
+
+{% block content %}
+<main class="container" style="margin-top: 2rem;">
+    <h2 style="color: #1d3557; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Relatório de Gastos por Funcionário (RH)
+    </h2>
+
+    <div style="background-color: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;">
+        <form method="GET" action="{% url 'relatorio_rh' %}" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+            <div>
+                <label for="mes" style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 5px;">Mês</label>
+                <select name="mes" id="mes" style="padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 4px; min-width: 150px;">
+                    <option value="">Todos os Meses</option>
+                    <option value="1" {% if mes_selecionado == '1' %}selected{% endif %}>Janeiro</option>
+                    <option value="2" {% if mes_selecionado == '2' %}selected{% endif %}>Fevereiro</option>
+                    <option value="3" {% if mes_selecionado == '3' %}selected{% endif %}>Março</option>
+                    <option value="4" {% if mes_selecionado == '4' %}selected{% endif %}>Abril</option>
+                    <option value="5" {% if mes_selecionado == '5' %}selected{% endif %}>Maio</option>
+                    <option value="6" {% if mes_selecionado == '6' %}selected{% endif %}>Junho</option>
+                    <option value="7" {% if mes_selecionado == '7' %}selected{% endif %}>Julho</option>
+                    <option value="8" {% if mes_selecionado == '8' %}selected{% endif %}>Agosto</option>
+                    <option value="9" {% if mes_selecionado == '9' %}selected{% endif %}>Setembro</option>
+                    <option value="10" {% if mes_selecionado == '10' %}selected{% endif %}>Outubro</option>
+                    <option value="11" {% if mes_selecionado == '11' %}selected{% endif %}>Novembro</option>
+                    <option value="12" {% if mes_selecionado == '12' %}selected{% endif %}>Dezembro</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="ano" style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 5px;">Ano</label>
+                <select name="ano" id="ano" style="padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 4px; min-width: 120px;">
+                    <option value="">Todos os Anos</option>
+                    {% for a in anos_disponiveis %}
+                    <option value="{{ a }}" {% if ano_selecionado == a|stringformat:"s" %}selected{% endif %}>{{ a }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <button type="submit" class="btn-action" style="padding: 0.6rem 1.2rem; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-filter"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div style="background-color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="background-color: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
+                    <th style="padding: 1rem; color: #1e293b; font-weight: 600;">Funcionário</th>
+                    <th style="padding: 1rem; color: #1e293b; font-weight: 600;">Matrícula</th>
+                    <th style="padding: 1rem; color: #1e293b; font-weight: 600;">Celular</th>
+                    <th style="padding: 1rem; color: #1e293b; font-weight: 600;">Total Gasto (R$)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usr in usuarios %}
+                <tr style="border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
+                    <td style="padding: 1rem;">
+                        <a href="{% url 'relatorio_rh_detalhes' usr.id %}?mes={{ mes_selecionado }}&ano={{ ano_selecionado }}" style="color: #2563eb; font-weight: 500; text-decoration: none;">
+                            {{ usr.first_name }}
+                        </a>
+                    </td>
+                    <td style="padding: 1rem; color: #475569; font-family: monospace;">{{ usr.profile.matricula|default:"N/A" }}</td>
+                    <td style="padding: 1rem; color: #475569;">{{ usr.profile.celular|default:"N/A" }}</td>
+                    <td style="padding: 1rem; color: #e63946; font-weight: bold;">
+                        R$ {{ usr.total_gasto|default:0.00|floatformat:2 }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="padding: 2rem; text-align: center; color: #64748b;">
+                        Nenhum registro encontrado para este filtro.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<style>
+    tbody tr:hover {
+        background-color: #f8fafc !important;
+    }
+</style>
+{% endblock %}

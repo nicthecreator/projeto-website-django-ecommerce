@@ -1,0 +1,20 @@
+    <!-- Cart Sidebar -->
+    <div id="cart-sidebar" class="cart-sidebar">
+        <div class="cart-header">
+            <h3>Seu Carrinho</h3>
+            <button id="close-cart-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="cart-items" id="cart-items-container">
+            <!-- Items will be injected here via JS -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total:</span>
+                <span id="cart-total-price">R$ 0,00</span>
+            </div>
+            <a href="{% url 'checkout' %}" style="text-decoration: none;">
+                <button class="btn-comprar btn-finalizar" style="width: 100%;">Finalizar Compra</button>
+            </a>
+        </div>
+    </div>
+    <div id="cart-overlay" class="cart-overlay"></div>

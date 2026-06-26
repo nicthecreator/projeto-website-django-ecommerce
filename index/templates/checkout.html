@@ -1,0 +1,266 @@
+{% extends 'global/base.html' %}
+{% load static %}
+
+{% block title %}PHD Store - Checkout{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .checkout-container {
+            max-width: 800px;
+            margin: 4rem auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            padding: 3rem;
+        }
+        .checkout-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #1d3557;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 1rem;
+        }
+        .order-summary {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 0.5rem;
+        }
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2a9d8f;
+            margin-top: 1.5rem;
+        }
+        .payment-info {
+            background: #e3f2fd;
+            border-left: 4px solid #1976d2;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 2rem;
+            color: #0d47a1;
+        }
+        .terms-box {
+            background: #fff3e0;
+            border: 1px solid #ffb74d;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        .terms-box p {
+            font-size: 0.9rem;
+            color: #e65100;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        .terms-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-confirm {
+            width: 100%;
+            padding: 1rem;
+            background-color: #2a9d8f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-confirm:hover {
+            background-color: #21867a;
+        }
+        .btn-confirm:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            .checkout-container {
+                margin: 2rem 1rem;
+                padding: 1.5rem;
+            }
+            .checkout-header h2 {
+                font-size: 1.2rem;
+            }
+            .summary-item {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .summary-total {
+                font-size: 1.2rem;
+            }
+            .terms-checkbox {
+                align-items: flex-start;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="checkout-container">
+        <div class="checkout-header">
+            <h2><i class="fa-solid fa-clipboard-check"></i> Resumo da Compra</h2>
+        </div>
+
+        <div class="order-summary" id="checkout-items">
+            <!-- Itens serão renderizados pelo JS -->
+        </div>
+
+        <div class="payment-info">
+            <strong><i class="fa-solid fa-money-check-dollar"></i> Forma de Pagamento:</strong> 
+            Desconto Direto em Folha de Pagamento
+        </div>
+
+        <div class="terms-box">
+            <p>
+                <strong><i class="fa-solid fa-triangle-exclamation"></i> Termo de Responsabilidade:</strong><br>
+                O cliente está ciente de que o produto não foi aceito pelo mercado por qualquer motivo que seja, e que a empresa verificou as embalagens e estão boas para consumo. Se algo acontecer é de inteira responsabilidade do cliente (não vendemos nada fora do prazo de validade).<br><br>
+                Também concordo que o valor total desta compra será descontado diretamente na minha folha de pagamento.
+            </p>
+            <label class="terms-checkbox">
+                <input type="checkbox" id="aceito-termos">
+                Li e aceito os termos de responsabilidade.
+            </label>
+        </div>
+
+        <button class="btn-confirm" id="btn-finalizar" disabled>Confirmar e Gerar Comprovante</button>
+    </div>
+
+    <div style="display: none;">
+        {% csrf_token %}
+    </div>
+
+    <!-- Modal de Confirmação Final Checkout -->
+    <div id="checkoutConfirmModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+        <div style="background: white; border-radius: 12px; padding: 2rem; width: 90%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: center; transform: translateY(-20px); animation: modalFadeIn 0.3s forwards;">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background-color: #0d1b2a; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1.5rem auto;">
+                <i class="fa-solid fa-cart-arrow-down"></i>
+            </div>
+            <h3 style="color: #1e293b; margin-bottom: 0.5rem; font-size: 1.25rem;">Finalizar Pedido?</h3>
+            <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 2rem;">Tem certeza que deseja continuar? <strong>Não será possível cancelar o pedido depois.</strong></p>
+            
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button id="btnCancelCheckout" style="padding: 0.6rem 1.5rem; border: 1px solid #cbd5e1; background: white; color: #475569; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1; transition: background 0.2s;">
+                    Voltar
+                </button>
+                <button id="btnAcceptCheckout" style="padding: 0.6rem 1.5rem; border: none; background: #0d1b2a; color: white; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1; transition: background 0.2s;">
+                    Sim, Continuar
+                </button>
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes modalFadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
+            const container = document.getElementById('checkout-items');
+            const btnFinalizar = document.getElementById('btn-finalizar');
+            const checkboxTermos = document.getElementById('aceito-termos');
+            
+            if (carrinho.length === 0) {
+                container.innerHTML = '<p style="text-align:center;">Seu carrinho está vazio.</p>';
+                return;
+            }
+
+            let total = 0;
+            let html = '';
+
+            carrinho.forEach(item => {
+                total += item.preco * item.quantidade;
+                html += `
+                    <div class="summary-item">
+                        <span>${item.quantidade}x ${item.nome}</span>
+                        <span>R$ ${(item.preco * item.quantidade).toFixed(2).replace('.', ',')}</span>
+                    </div>
+                `;
+            });
+
+            html += `
+                <div class="summary-total">
+                    <span>Total:</span>
+                    <span>R$ ${total.toFixed(2).replace('.', ',')}</span>
+                </div>
+            `;
+            container.innerHTML = html;
+
+            checkboxTermos.addEventListener('change', (e) => {
+                btnFinalizar.disabled = !e.target.checked;
+            });
+
+            const modal = document.getElementById('checkoutConfirmModal');
+            const btnCancel = document.getElementById('btnCancelCheckout');
+            const btnAccept = document.getElementById('btnAcceptCheckout');
+
+            btnFinalizar.addEventListener('click', () => {
+                modal.style.display = 'flex';
+            });
+
+            btnCancel.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+
+            btnAccept.addEventListener('click', async () => {
+                modal.style.display = 'none';
+                btnFinalizar.disabled = true;
+                btnFinalizar.innerText = 'Processando...';
+                
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                try {
+                    const response = await fetch('{% url "checkout" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({
+                            itens: carrinho,
+                            total: total
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Limpa o carrinho
+                        localStorage.removeItem('carrinho');
+                        // Redireciona para o comprovante
+                        window.location.href = data.redirect_url;
+                    } else {
+                        showErrorModal(data.message || 'Erro ao processar compra.');
+                        btnFinalizar.disabled = false;
+                        btnFinalizar.innerText = 'Confirmar e Gerar Comprovante';
+                    }
+                } catch (error) {
+                    console.error('Erro:', error);
+                    showErrorModal('Ocorreu um erro no servidor.');
+                    btnFinalizar.disabled = false;
+                    btnFinalizar.innerText = 'Confirmar e Gerar Comprovante';
+                }
+            });
+        });
+    </script>
+{% endblock %}

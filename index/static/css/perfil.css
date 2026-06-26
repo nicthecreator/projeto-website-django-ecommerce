@@ -1,18 +1,4 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
 
-body {
-    /* Cor de fundo semelhante à da imagem para dar destaque ao card branco */
-    background-color: #127586; 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
 
 /* Atualize a classe page-container que já existia ou adicione caso não tenha */
 .page-container {

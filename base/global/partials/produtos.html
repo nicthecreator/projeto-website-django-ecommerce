@@ -1,24 +1,36 @@
 {% load static %}
 <main class="container">
-        
-        <div class="product-grid">
-            
-            {% for produto in produtos %}
-            <div class="product-card">
-                <div class="badge-avaria"><i class="fa-solid fa-triangle-exclamation"></i> {{ produto.avaria }}</div>
-                <img src="{{ produto.imagem_url }}" alt="{{ produto.nome }}">
-                <div class="product-info">
-                    <h4>{{ produto.nome }}</h4>
-                    <div class="prices">
-                        <span class="old-price">R$ {{ produto.preco_original|floatformat:2 }}</span>
-                        <span class="new-price">R$ {{ produto.preco_desconto|floatformat:2 }}</span>
-                    </div>
-                    <button class="btn-comprar" onclick="adicionarAoCarrinho()">Adicionar ao Carrinho</button>
+    <div class="product-grid">
+        {% for produto in produtos %}
+        <div class="product-card">
+            <div class="badge-avaria"><i class="fa-solid fa-triangle-exclamation"></i> {{ produto.avaria }}</div>
+            {% if produto.imagem_produto %}
+                <img src="{{ produto.imagem_produto.url }}" alt="{{ produto.nome }}">
+            {% else %}
+                <img src="https://via.placeholder.com/200x200" alt="{{ produto.nome }}">
+            {% endif %}
+            <div class="product-info">
+                <h4>{{ produto.nome }}</h4>
+                <div class="prices">
+                    <span class="old-price">R$ {{ produto.preco_original|floatformat:2 }}</span>
+                    <span class="new-price">R$ {{ produto.preco_desconto|floatformat:2 }}</span>
                 </div>
+                <p style="font-size: 0.8rem; color: #64748b; margin-top: 5px; margin-bottom: 10px; text-align: center;">
+                    <i class="fa-solid fa-circle-info"></i> Limite: <strong>{{ produto.limite_por_funcionario }} un</strong> a cada 24h
+                </p>
+                {% if user.is_authenticated %}
+                <button class="btn-comprar" onclick="adicionarAoCarrinho({{ produto.id }}, '{{ produto.nome|escapejs }}', '{{ produto.preco_desconto|floatformat:2 }}', '{% if produto.imagem_produto %}{{ produto.imagem_produto.url|escapejs }}{% else %}https://via.placeholder.com/200x200{% endif %}')">
+                    Adicionar ao Carrinho
+                </button>
+                {% else %}
+                <button class="btn-comprar-login" onclick="window.location.href='{% url 'login' %}'">
+                    LOGUE PARA ADICIONAR AO CARRINHO
+                </button>
+                {% endif %}
             </div>
-            {% empty %}
-            <p>Nenhum produto disponível no momento.</p>
-            {% endfor %}
-
         </div>
-    </main>
+        {% empty %}
+        <p>Nenhum produto disponível no momento.</p>
+        {% endfor %}
+    </div>
+</main>

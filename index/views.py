@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect # Importação para renderizar templates HTML e redirecionar usuários para outras páginas
+from django.shortcuts import render, redirect, get_object_or_404 # Importação para renderizar templates HTML e redirecionar usuários para outras páginas
 from django.contrib.auth.models import User # Importação do modelo de usuário padrão do Django para criar e gerenciar usuários
 from django.contrib.auth import authenticate, login # Importação para autenticação e login do usuário
 from django.contrib import messages # Importação para exibir mensagens de sucesso ou erro para o usuário
@@ -59,41 +59,68 @@ def logout_view(request):
     return redirect('index')
 
 
+from .models import Colaborador, UserProfile
+
+def buscar_colaborador(request):
+    matricula = request.GET.get('matricula')
+    if not matricula:
+        return JsonResponse({'success': False, 'message': 'Matrícula não informada.'})
+    
+    try:
+        colaborador = Colaborador.objects.get(matricula=matricula)
+        # Verifica se alguém já se cadastrou com essa matrícula
+        if UserProfile.objects.filter(matricula=matricula).exists():
+            return JsonResponse({'success': False, 'message': 'Esta matrícula já possui um cadastro.'})
+            
+        return JsonResponse({
+            'success': True, 
+            'nome': colaborador.nome, 
+            'email': colaborador.email
+        })
+    except Colaborador.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Matrícula não encontrada no sistema.'})
+
 def cadastro_view(request):
     if request.method == 'GET':
         return render(request, 'cadastro.html')
     else:
-        # O strip() remove espaços vazios que o usuário digite sem querer
-        nome = request.POST.get('nome').strip() 
-        # O lower() força o e-mail a ficar todo em minúsculo, padronizando a verificação
-        email = request.POST.get('email').strip().lower()
+        matricula = request.POST.get('matricula', '').strip()
+        nome = request.POST.get('nome', '').strip() 
+        email = request.POST.get('email', '').strip().lower()
+        celular = request.POST.get('celular', '').strip()
         senha = request.POST.get('senha')
         confirma_senha = request.POST.get('confirma_senha')
 
-        # ... (suas validações de campos vazios e senhas continuam aqui) ...
+        if not matricula:
+            return render(request, 'cadastro.html', {'error': 'Matrícula é obrigatória.'})
+            
+        if not Colaborador.objects.filter(matricula=matricula).exists():
+            return render(request, 'cadastro.html', {'error': 'Matrícula inválida.'})
+
+        if UserProfile.objects.filter(matricula=matricula).exists():
+            return render(request, 'cadastro.html', {'error': 'Esta matrícula já está cadastrada.'})
 
         if User.objects.filter(email=email).exists() or User.objects.filter(username=email).exists():
             return render(request, 'cadastro.html', {'error': 'E-mail já cadastrado.'})
 
         try:
-            # 1. Cria o usuário como INATIVO (is_active=False)
-            user = User.objects.create_user(
-                username=email, 
-                email=email, 
-                password=senha,
-                first_name=nome,
-                is_active=False # O usuário não consegue logar ainda
-            )
-            user.save()
+            # Em vez de sujar o banco de dados agora, salvamos na sessão
+            request.session['cadastro_data'] = {
+                'matricula': matricula,
+                'nome': nome,
+                'email': email,
+                'celular': celular,
+                'senha': senha
+            }
 
-            # 2. Gera um código de 6 dígitos aleatório
+            # Gera um código de 6 dígitos aleatório
             codigo = str(random.randint(100000, 999999))
             
-            # 3. Salva o código e o e-mail na sessão do navegador temporariamente
+            # Salva o código e o e-mail na sessão do navegador
             request.session['codigo_verificacao'] = codigo
             request.session['email_verificacao'] = email
 
-            # 4. Dispara o e-mail para o usuário
+            # Dispara o e-mail para o usuário
             send_mail(
                 'Confirme sua conta - PHD Store',
                 f'Olá, {nome}! Seu código de verificação é: {codigo}',
@@ -119,27 +146,47 @@ def verificar_codigo_view(request):
             # Resgata os dados que guardamos na sessão durante o cadastro
             email_sessao = request.session.get('email_verificacao')
             codigo_sessao = request.session.get('codigo_verificacao')
+            cadastro_data = request.session.get('cadastro_data')
 
-            if not email_sessao or not codigo_sessao:
+            if not email_sessao or not codigo_sessao or not cadastro_data:
                 return JsonResponse({'success': False, 'message': 'Sessão expirada. Refaça o cadastro.'}, status=400)
 
             # Verifica se o código bate com o gerado
             if codigo_digitado == codigo_sessao:
-                # Encontra o usuário inativo e o ativa
-                user = User.objects.get(email=email_sessao)
-                user.is_active = True
-                user.save()
+                # Verifica novamente se já existe (segurança extra)
+                if UserProfile.objects.filter(matricula=cadastro_data['matricula']).exists():
+                    return JsonResponse({'success': False, 'message': 'Matrícula já cadastrada no meio tempo.'}, status=400)
+                    
+                # Cria o usuário finalmente como ATIVO
+                user = User.objects.create_user(
+                    username=cadastro_data['email'],
+                    email=cadastro_data['email'],
+                    password=cadastro_data['senha'],
+                    first_name=cadastro_data['nome'],
+                    is_active=True
+                )
                 
-                # Limpa a sessão por segurança
+                UserProfile.objects.create(
+                    user=user,
+                    matricula=cadastro_data['matricula'],
+                    celular=cadastro_data['celular']
+                )
+                
+                # Faz login automaticamente
+                from django.contrib.auth import login
+                login(request, user)
+                
+                # Limpa a sessão
                 del request.session['codigo_verificacao']
                 del request.session['email_verificacao']
+                del request.session['cadastro_data']
                 
-                return JsonResponse({'success': True, 'redirect_url': '/login/'})
+                return JsonResponse({'success': True, 'redirect_url': '/'})
             else:
                 return JsonResponse({'success': False, 'message': 'Código inválido.'}, status=400)
                 
         except Exception as e:
-            return JsonResponse({'success': False, 'message': 'Erro no servidor.'}, status=500)
+            return JsonResponse({'success': False, 'message': f'Erro no servidor: {str(e)}'}, status=500)
 
     # Se for GET, apenas mostra a página HTML
     return render(request, 'verificar_codigo.html')
@@ -261,93 +308,8 @@ def nova_senha_view(request, uidb64, token):
 
 
 def index_view(request):
-    # Exemplo de contexto que viria do seu banco de dados
-    produtos = [
-        {
-            'nome': 'Biscoito Amanteigado Gourmet',
-            'avaria': 'Embalagem Amassada',
-            'preco_original': 15.90,
-            'preco_desconto': 5.90,
-            'imagem_url': 'https://via.placeholder.com/200x200?text=Biscoito'
-        },
-        {
-            'nome': 'Azeite de Oliva Extra Virgem 500ml',
-            'avaria': 'Rótulo Rasgado',
-            'preco_original': 45.90,
-            'preco_desconto': 22.90,
-            'imagem_url': 'https://via.placeholder.com/200x200?text=Azeite'
-        },
-        {
-            'nome': 'Macarrão Penne Grano Duro 500g',
-            'avaria': 'Caixa Danificada',
-            'preco_original': 8.50,
-            'preco_desconto': 3.50,
-            'imagem_url': 'https://via.placeholder.com/200x200?text=Macarrao'
-        },
-        {
-            'nome': 'Leite Integral 1L',
-            'avaria': 'Embalagem Amassada',
-            'preco_original': 15.90,
-            'preco_desconto': 5.90,
-            'imagem_url': 'https://via.placeholder.com/200x200?text=Biscoito'
-        },
-        {
-            'nome': 'Leite Condensado 395g',
-            'avaria': 'Rótulo Rasgado',
-            'preco_original': 45.90,
-            'preco_desconto': 22.90,
-            'imagem_url': 'https://via.placeholder.com/200x200?text=Azeite'
-        },
-        {
-            'nome': 'Arroz Branco Tipo 1 5kg',
-            'avaria': 'Caixa Danificada',
-            'preco_original': 8.50,
-            'preco_desconto': 3.50,
-            'imagem_url': 'https://via.placeholder.com/200x200?text=Macarrao'
-        },
-        {
-            'nome': 'Macarrão Penne Grano Duro 500g',
-            'avaria': 'Caixa Danificada',
-            'preco_original': 8.50,
-            'preco_desconto': 3.50,
-            'imagem_url': 'https://via.placeholder.com/200x200?text=Macarrao'
-        },
-        {
-            'nome': 'Leite Integral 1L',
-            'avaria': 'Embalagem Amassada',
-            'preco_original': 15.90,
-            'preco_desconto': 5.90,
-            'imagem_url': 'https://via.placeholder.com/200x200?text=Biscoito'
-        },
-        {
-            'nome': 'Leite Condensado 395g',
-            'avaria': 'Rótulo Rasgado',
-            'preco_original': 45.90,
-            'preco_desconto': 22.90,
-            'imagem_url': 'https://via.placeholder.com/200x200?text=Azeite'
-        },
-        {
-            'nome': 'Arroz Branco Tipo 1 5kg',
-            'avaria': 'Caixa Danificada',
-            'preco_original': 8.50,
-            'preco_desconto': 3.50,
-            'imagem_url': 'https://via.placeholder.com/200x200?text=Macarrao'
-        },
-        {
-            'nome': 'Arroz Branco Tipo 1 5kg',
-            'avaria': 'Caixa Danificada',
-            'preco_original': 8.50,
-            'preco_desconto': 3.50,
-            'imagem_url': 'https://via.placeholder.com/200x200?text=Macarrao'
-        },
-        {
-            'nome': 'Arroz Branco Tipo 1 5kg',
-            'avaria': 'Caixa Danificada',
-            'preco_original': 8.50,
-            'preco_desconto': 3.50,
-            'imagem_url': 'https://via.placeholder.com/200x200?text=Macarrao'
-        }
-    ]
+    # Busca produtos com estoque maior que zero
+    produtos = Produto.objects.filter(estoque__gt=0).order_by('-id')
     
     return render(request, 'index.html', {'produtos': produtos})
 
@@ -356,24 +318,386 @@ def index_view(request):
 def perfil_view(request):
     if request.method == 'POST':
         try:
-            # Captura o novo nome do formulário
-            novo_nome = request.POST.get('nome')
+            # Captura o novo celular do formulário
+            novo_celular = request.POST.get('celular')
             
-            # Atualiza o modelo de usuário padrão do Django
-            usuario = request.user
-            usuario.first_name = novo_nome
-            usuario.save()
+            # Atualiza o modelo de perfil do usuário
+            perfil = request.user.profile
+            perfil.celular = novo_celular
+            perfil.save()
             
-            # Se você criar um modelo 'Perfil' depois para telefone/localização, 
-            # você o salvaria aqui. Ex:
-            # perfil = usuario.perfil
-            # perfil.telefone = request.POST.get('telefone')
-            # perfil.save()
-
-            messages.success(request, 'Perfil atualizado com sucesso!')
+            messages.success(request, 'Celular atualizado com sucesso!')
             return redirect('perfil')
             
         except Exception as e:
             messages.error(request, 'Erro ao atualizar o perfil.')
             
     return render(request, 'perfil.html')
+
+from .models import Pedido, ItemPedido
+
+from datetime import timedelta
+from django.db.models import Sum
+
+@login_required(login_url='login')
+def verificar_limite_view(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            produto_id = data.get('produto_id')
+            qtd_solicitada = int(data.get('quantidade', 1))
+            
+            if not produto_id:
+                return JsonResponse({'success': False, 'message': 'Produto não informado.'})
+                
+            try:
+                produto = Produto.objects.get(id=produto_id)
+            except Produto.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Produto não encontrado.'})
+                
+            agora = timezone.now()
+            limite_24h = agora - timedelta(hours=24)
+            
+            compras_24h = ItemPedido.objects.filter(
+                pedido__usuario=request.user,
+                produto=produto,
+                pedido__data_pedido__gte=limite_24h
+            ).exclude(pedido__status='Cancelado').aggregate(total_comprado=Sum('quantidade'))['total_comprado'] or 0
+            
+            if (compras_24h + qtd_solicitada) > produto.limite_por_funcionario:
+                return JsonResponse({
+                    'success': False, 
+                    'message': f'O limite do produto "{produto.nome}" são {produto.limite_por_funcionario} unidades em 24h.'
+                })
+                
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro: {str(e)}'})
+    
+    return JsonResponse({'success': False, 'message': 'Método inválido.'})
+
+@login_required(login_url='login')
+def checkout_view(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            itens = data.get('itens', [])
+            total = data.get('total', 0)
+            
+            if not itens:
+                return JsonResponse({'success': False, 'message': 'O carrinho está vazio.'}, status=400)
+                
+            # Validar limites de 24h
+            agora = timezone.now()
+            limite_24h = agora - timedelta(hours=24)
+            
+            produtos_validados = []
+            
+            for item in itens:
+                produto_id = item.get('id')
+                if not produto_id:
+                    return JsonResponse({'success': False, 'message': 'Carrinho desatualizado. Por favor, remova os itens do carrinho e adicione novamente.'}, status=400)
+                    
+                try:
+                    produto = Produto.objects.get(id=produto_id)
+                except Produto.DoesNotExist:
+                    return JsonResponse({'success': False, 'message': f'Produto {item.get("nome")} não encontrado.'}, status=404)
+                    
+                qtd_solicitada = int(item.get('quantidade', 0))
+                
+                # Buscar quantidade comprada nas últimas 24h (ignorando cancelados)
+                compras_24h = ItemPedido.objects.filter(
+                    pedido__usuario=request.user,
+                    produto=produto,
+                    pedido__data_pedido__gte=limite_24h
+                ).exclude(pedido__status='Cancelado').aggregate(total_comprado=Sum('quantidade'))['total_comprado'] or 0
+                
+                if (compras_24h + qtd_solicitada) > produto.limite_por_funcionario:
+                    return JsonResponse({
+                        'success': False, 
+                        'message': f'O limite do produto "{produto.nome}" são {produto.limite_por_funcionario} unidades em 24h.'
+                    }, status=400)
+                    
+                produtos_validados.append({
+                    'produto': produto,
+                    'nome': item.get('nome'),
+                    'quantidade': qtd_solicitada,
+                    'preco': item.get('preco')
+                })
+                
+            # Cria o pedido no banco de dados
+            pedido = Pedido.objects.create(
+                usuario=request.user,
+                total=total,
+                desconto_folha=True,
+                termo_aceito=True
+            )
+            
+            # Cria os itens do pedido
+            for item_val in produtos_validados:
+                ItemPedido.objects.create(
+                    pedido=pedido,
+                    produto=item_val['produto'],
+                    produto_nome=item_val['nome'],
+                    quantidade=item_val['quantidade'],
+                    preco_unitario=item_val['preco']
+                )
+                
+                # Opcional: Atualizar o estoque
+                # item_val['produto'].estoque -= item_val['quantidade']
+                # item_val['produto'].save()
+                
+            return JsonResponse({
+                'success': True,
+                'redirect_url': f'/comprovante/{pedido.id}/'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao processar pedido: {str(e)}'}, status=500)
+            
+    return render(request, 'checkout.html')
+
+@login_required(login_url='login')
+def comprovante_view(request, pedido_id):
+    try:
+        pedido = Pedido.objects.get(id=pedido_id, usuario=request.user)
+        return render(request, 'comprovante.html', {'pedido': pedido})
+    except Pedido.DoesNotExist:
+        messages.error(request, 'Pedido não encontrado.')
+        return redirect('index')
+
+@login_required(login_url='login')
+def minhas_compras_view(request):
+    # Busca os pedidos do usuário, do mais recente para o mais antigo
+    pedidos = Pedido.objects.filter(usuario=request.user).order_by('-data_pedido')
+    return render(request, 'minhas_compras.html', {'pedidos': pedidos})
+
+from django.utils import timezone
+from .models import Produto
+
+@login_required(login_url='login')
+def painel_admin_view(request):
+    if not request.user.is_staff:
+        messages.error(request, 'Acesso restrito para administradores.')
+        return redirect('index')
+    
+    produtos = Produto.objects.all().order_by('-id')
+    pedidos = Pedido.objects.all().order_by('-data_pedido')
+    
+    return render(request, 'painel_admin.html', {'produtos': produtos, 'pedidos': pedidos})
+
+@login_required(login_url='login')
+def adicionar_produto(request):
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'message': 'Não autorizado'}, status=403)
+        
+    if request.method == 'POST':
+        nome = request.POST.get('nome')
+        avaria = request.POST.get('avaria')
+        preco_original = request.POST.get('preco_original')
+        preco_desconto = request.POST.get('preco_desconto')
+        estoque = request.POST.get('estoque', 0)
+        limite_por_funcionario = request.POST.get('limite_por_funcionario', 1)
+        imagem_produto = request.FILES.get('imagem_produto')
+        
+        try:
+            Produto.objects.create(
+                nome=nome,
+                avaria=avaria,
+                preco_original=preco_original,
+                preco_desconto=preco_desconto,
+                estoque=estoque,
+                limite_por_funcionario=limite_por_funcionario,
+                imagem_produto=imagem_produto
+            )
+            messages.success(request, 'Produto adicionado com sucesso!')
+            return redirect('painel_admin')
+        except Exception as e:
+            messages.error(request, f'Erro ao adicionar produto: {str(e)}')
+            return redirect('painel_admin')
+            
+    return redirect('painel_admin')
+
+@login_required(login_url='login')
+def editar_produto(request, produto_id):
+    if not request.user.is_staff:
+        messages.error(request, 'Não autorizado')
+        return redirect('index')
+        
+    if request.method == 'POST':
+        try:
+            produto = Produto.objects.get(id=produto_id)
+            produto.nome = request.POST.get('nome')
+            produto.avaria = request.POST.get('avaria')
+            
+            # Converte string formatada em float se necessário
+            preco_original = request.POST.get('preco_original').replace(',', '.')
+            preco_desconto = request.POST.get('preco_desconto').replace(',', '.')
+            
+            produto.preco_original = preco_original
+            produto.preco_desconto = preco_desconto
+            produto.estoque = request.POST.get('estoque', 0)
+            produto.limite_por_funcionario = request.POST.get('limite_por_funcionario', 1)
+            
+            imagem_produto = request.FILES.get('imagem_produto')
+            if imagem_produto:
+                produto.imagem_produto = imagem_produto
+                
+            produto.save()
+            messages.success(request, 'Produto atualizado com sucesso!')
+        except Produto.DoesNotExist:
+            messages.error(request, 'Produto não encontrado.')
+        except Exception as e:
+            messages.error(request, f'Erro ao atualizar produto: {str(e)}')
+            
+    return redirect('painel_admin')
+
+@login_required(login_url='login')
+def deletar_produto(request, produto_id):
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'message': 'Não autorizado'}, status=403)
+        
+    if request.method == 'POST':
+        try:
+            produto = Produto.objects.get(id=produto_id)
+            produto.delete()
+            return JsonResponse({'success': True})
+        except Produto.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Produto não encontrado'}, status=404)
+            
+    return JsonResponse({'success': False, 'message': 'Método inválido'}, status=405)
+
+@login_required(login_url='login')
+def dar_baixa_pedido(request, pedido_id):
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'message': 'Não autorizado'}, status=403)
+        
+    if request.method == 'POST':
+        try:
+            pedido = Pedido.objects.get(id=pedido_id)
+            if pedido.status == 'Pendente':
+                pedido.status = 'Retirado'
+                pedido.data_retirada = timezone.now()
+                pedido.responsavel_retirada = request.user
+                pedido.save()
+                return JsonResponse({
+                    'success': True, 
+                    'data_retirada': pedido.data_retirada.strftime('%d/%m/%Y %H:%M'),
+                    'responsavel': request.user.first_name or request.user.username
+                })
+            return JsonResponse({'success': False, 'message': 'Pedido já retirado ou cancelado'}, status=400)
+        except Pedido.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Pedido não encontrado'}, status=404)
+            
+    return JsonResponse({'success': False, 'message': 'Método inválido'}, status=405)
+
+from django.db.models import Q
+from datetime import datetime
+
+@login_required(login_url='login')
+def relatorio_rh_view(request):
+    eh_rh = False
+    try:
+        if hasattr(request.user, 'profile') and request.user.profile.is_rh:
+            eh_rh = True
+    except Exception:
+        pass
+        
+    if not (request.user.is_superuser or eh_rh):
+        messages.error(request, 'Acesso restrito ao RH.')
+        return redirect('index')
+
+    mes = request.GET.get('mes', '')
+    ano = request.GET.get('ano', '')
+    
+    # Filtro base ignorando cancelados
+    filtro_pedidos = ~Q(pedidos__status='Cancelado')
+    
+    if mes:
+        filtro_pedidos &= Q(pedidos__data_pedido__month=int(mes))
+    if ano:
+        filtro_pedidos &= Q(pedidos__data_pedido__year=int(ano))
+        
+    usuarios = User.objects.filter(is_active=True, is_staff=False).annotate(
+        total_gasto=Sum('pedidos__total', filter=filtro_pedidos)
+    ).order_by('first_name')
+    
+    # Lista de anos (para o filtro), pegando os anos distintos dos pedidos
+    anos_disponiveis = Pedido.objects.dates('data_pedido', 'year', order='DESC')
+    anos_disponiveis = [d.year for d in anos_disponiveis]
+    if not anos_disponiveis:
+        anos_disponiveis = [datetime.now().year]
+        
+    context = {
+        'usuarios': usuarios,
+        'mes_selecionado': mes,
+        'ano_selecionado': ano,
+        'anos_disponiveis': anos_disponiveis
+    }
+    
+    return render(request, 'relatorio_rh.html', context)
+
+@login_required(login_url='login')
+def relatorio_rh_detalhes_view(request, user_id):
+    eh_rh = False
+    try:
+        if hasattr(request.user, 'profile') and request.user.profile.is_rh:
+            eh_rh = True
+    except Exception:
+        pass
+        
+    if not (request.user.is_superuser or eh_rh):
+        messages.error(request, 'Acesso restrito ao RH.')
+        return redirect('index')
+
+    funcionario = get_object_or_404(User, id=user_id)
+    
+    mes = request.GET.get('mes', '')
+    ano = request.GET.get('ano', '')
+    
+    pedidos = Pedido.objects.filter(usuario=funcionario).exclude(status='Cancelado')
+    
+    if mes:
+        pedidos = pedidos.filter(data_pedido__month=int(mes))
+    if ano:
+        pedidos = pedidos.filter(data_pedido__year=int(ano))
+        
+    pedidos = pedidos.order_by('-data_pedido').prefetch_related('itens', 'itens__produto')
+    
+    total_gasto = pedidos.aggregate(Sum('total'))['total__sum'] or 0.00
+    
+    context = {
+        'funcionario': funcionario,
+        'pedidos': pedidos,
+        'mes_selecionado': mes,
+        'ano_selecionado': ano,
+        'total_gasto': total_gasto
+    }
+    return render(request, 'relatorio_rh_detalhes.html', context)
+
+@login_required(login_url='login')
+def dar_baixa_rh_view(request, pedido_id):
+    eh_rh = False
+    try:
+        if hasattr(request.user, 'profile') and request.user.profile.is_rh:
+            eh_rh = True
+    except Exception:
+        pass
+        
+    if not (request.user.is_superuser or eh_rh):
+        return JsonResponse({'success': False, 'message': 'Não autorizado'}, status=403)
+        
+    if request.method == 'POST':
+        try:
+            pedido = Pedido.objects.get(id=pedido_id)
+            pedido.descontado_rh = True
+            pedido.responsavel_baixa = request.user
+            pedido.save()
+            return JsonResponse({
+                'success': True, 
+                'status': 'baixado',
+                'responsavel': request.user.first_name or request.user.username
+            })
+        except Pedido.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Pedido não encontrado'}, status=404)
+            
+    return JsonResponse({'success': False, 'message': 'Método inválido'}, status=405)

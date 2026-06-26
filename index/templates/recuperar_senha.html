@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PHD Store - Recuperar Senha</title>
-    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}?v=1.1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="{% static 'home/images/favicon.ico' %}">
 </head>
@@ -13,7 +13,8 @@
     <div class="container">
         <div class="login-section">
             <div class="login-box">
-                <h1>PHD Store<br/>Recupere sua senha</h1>
+                <img src="{% static 'images/logo-nav.png' %}" alt="Logo PHD Store" class="login-logo-mobile">
+                <h1 class="login-title-desktop">PHD Store<br/><span class="login-subtitle">Recupere sua senha</span></h1>
                 <p style="color: #666; margin-bottom: 2rem; font-size: 0.875rem;">
                     Digite seu e-mail abaixo para receber as instruções de redefinição de senha.
                 </p>

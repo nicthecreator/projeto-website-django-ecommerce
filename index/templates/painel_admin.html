@@ -1,0 +1,542 @@
+{% extends 'global/base.html' %}
+{% load static %}
+
+{% block title %}Painel Administrativo - PHD Store{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .admin-container {
+            width: 100%;
+            max-width: 1500px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            flex: 1;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 1rem;
+        }
+
+        .admin-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            background: #eee;
+            color: #333;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .tab-btn.active {
+            background: #1d3557;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Tabela Estilo */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #1d3557;
+            color: white;
+        }
+
+        .btn-action {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-danger { background: #e63946; }
+        .btn-success { background: #2a9d8f; }
+
+        /* Formulário Produto */
+        .add-product-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .add-product-card h3 {
+            margin-bottom: 2rem;
+            color: #1d3557;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .form-group label {
+            width: 100%;
+            max-width: 400px;
+            text-align: left;
+        }
+
+        .form-group input {
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 400px;
+            text-align: left;
+        }
+
+        .img-preview {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        
+        .status-badge {
+            padding: 0.3rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .status-pendente { background: #fef08a; color: #854d0e; }
+        .status-retirado { background: #bbf7d0; color: #166534; }
+
+        /* Responsividade para Celulares */
+        @media (max-width: 768px) {
+            .admin-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+
+            .admin-tabs {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .tab-btn {
+                width: 100%;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group[style*="grid-column: span 2"] {
+                grid-column: span 1 !important;
+            }
+
+            /* Permite rolagem horizontal nas tabelas sem quebrar o layout */
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            
+            .add-product-card {
+                padding: 1.5rem 1rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h2><i class="fa-solid fa-lock"></i> Painel Administrativo</h2>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div style="padding: 1rem; margin-bottom: 1rem; border-radius: 4px; text-align: center; font-weight: bold; background-color: {% if message.tags == 'error' %}#fee2e2; color: #dc2626{% else %}#dcfce7; color: #16a34a{% endif %};">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="admin-tabs">
+        <button class="tab-btn active" onclick="showTab('produtos')">Gerenciar Produtos</button>
+        <button class="tab-btn" onclick="showTab('pedidos')">Pedidos (Retiradas)</button>
+    </div>
+
+    <!-- ABA PRODUTOS -->
+    <div id="produtos" class="tab-content active">
+        <div class="add-product-card">
+            <h3>Adicionar Novo Produto</h3>
+            <form action="{% url 'adicionar_produto' %}" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nome do Produto</label>
+                        <input type="text" name="nome" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Avaria / Motivo do Desconto</label>
+                        <input type="text" name="avaria" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Preço Original (R$)</label>
+                        <input type="number" step="0.01" name="preco_original" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Preço com Desconto (R$)</label>
+                        <input type="number" step="0.01" name="preco_desconto" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Estoque</label>
+                        <input type="number" name="estoque" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Limite por Funcionário (24h)</label>
+                        <input type="number" name="limite_por_funcionario" value="1" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Foto do Produto</label>
+                        <input type="file" name="imagem_produto" accept="image/*" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-action btn-success" style="margin-top: 1rem; width: 100%;">Cadastrar Produto</button>
+            </form>
+        </div>
+
+        <h3>Catálogo Atual</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Foto</th>
+                    <th>Nome</th>
+                    <th>Avaria</th>
+                    <th>Preço</th>
+                    <th>Estoque</th>
+                    <th>Limite (24h)</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in produtos %}
+                <tr>
+                    <td>
+                        {% if p.imagem_produto %}
+                            <img src="{{ p.imagem_produto.url }}" class="img-preview">
+                        {% else %}
+                            <img src="https://via.placeholder.com/50" class="img-preview">
+                        {% endif %}
+                    </td>
+                    <td>{{ p.nome }}</td>
+                    <td>{{ p.avaria }}</td>
+                    <td>R$ {{ p.preco_desconto }}</td>
+                    <td>{{ p.estoque }} un</td>
+                    <td>{{ p.limite_por_funcionario }} un</td>
+                    <td>
+                        <button onclick="abrirModalEditar({{ p.id }}, '{{ p.nome|escapejs }}', '{{ p.avaria|escapejs }}', '{{ p.preco_original|escapejs }}', '{{ p.preco_desconto|escapejs }}', {{ p.estoque }}, {{ p.limite_por_funcionario }})" class="btn-action btn-success" style="background:#0284c7; color:white; margin-right:5px;"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deletarProduto({{ p.id }})" class="btn-action btn-danger"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align: center;">Nenhum produto cadastrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ABA PEDIDOS -->
+    <div id="pedidos" class="tab-content">
+        <h3>Lista de Pedidos</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Pedido #</th>
+                    <th>Funcionário</th>
+                    <th>Data da Compra</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pedidos %}
+                <tr>
+                    <td>#{{ p.id }}</td>
+                    <td>{{ p.usuario.first_name }}</td>
+                    <td>{{ p.data_pedido|date:"d/m/Y H:i" }}</td>
+                    <td>R$ {{ p.total }}</td>
+                    <td>
+                        <span class="status-badge {% if p.status == 'Pendente' %}status-pendente{% else %}status-retirado{% endif %}" id="status-{{ p.id }}">
+                            {{ p.status }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if p.status == 'Pendente' %}
+                            <button id="btn-baixa-{{ p.id }}" onclick="darBaixa({{ p.id }})" class="btn-action btn-success">Dar Baixa</button>
+                        {% else %}
+                            <small id="data-retirada-{{ p.id }}">
+                                {{ p.data_retirada|date:"d/m/Y H:i" }}
+                                {% if p.responsavel_retirada %}
+                                    <br><span style="color:#64748b; font-size:0.75rem;">(Por: {{ p.responsavel_retirada.first_name|default:p.responsavel_retirada.username }})</span>
+                                {% endif %}
+                            </small>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align: center;">Nenhum pedido realizado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <!-- MODAL DE EDIÇÃO DE PRODUTO -->
+    <div id="modalEditar" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; padding:2rem; border-radius:8px; max-width:500px; width:90%; max-height:90vh; overflow-y:auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h3 style="margin:0;"><i class="fa-solid fa-pen"></i> Editar Produto</h3>
+                <button onclick="fecharModalEditar()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#64748b;">&times;</button>
+            </div>
+            
+            <form id="formEditar" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Nome do Produto</label>
+                        <input type="text" name="nome" id="edit_nome" required>
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Avaria / Motivo do Desconto</label>
+                        <input type="text" name="avaria" id="edit_avaria" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Preço Original (R$)</label>
+                        <input type="text" name="preco_original" id="edit_preco_original" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Preço c/ Desconto (R$)</label>
+                        <input type="text" name="preco_desconto" id="edit_preco_desconto" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Estoque</label>
+                        <input type="number" name="estoque" id="edit_estoque" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Limite (24h)</label>
+                        <input type="number" name="limite_por_funcionario" id="edit_limite" min="1" required>
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Nova Foto (opcional)</label>
+                        <input type="file" name="imagem_produto" accept="image/*">
+                        <small style="color:#64748b;">Deixe em branco para manter a foto atual.</small>
+                    </div>
+                </div>
+                
+                <div style="display:flex; gap:10px; margin-top:1.5rem;">
+                    <button type="submit" class="btn-action btn-success" style="flex:1;">Salvar Alterações</button>
+                    <button type="button" onclick="fecharModalEditar()" class="btn-action" style="flex:1; background:#94a3b8; color:white;">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script>
+    function abrirModalEditar(id, nome, avaria, precoOriginal, precoDesconto, estoque, limite) {
+        document.getElementById('edit_nome').value = nome;
+        document.getElementById('edit_avaria').value = avaria;
+        document.getElementById('edit_preco_original').value = precoOriginal.replace(',', '.');
+        document.getElementById('edit_preco_desconto').value = precoDesconto.replace(',', '.');
+        document.getElementById('edit_estoque').value = estoque;
+        document.getElementById('edit_limite').value = limite;
+        
+        // Atualiza a action do form para a URL correta com o ID
+        document.getElementById('formEditar').action = `/editar-produto/${id}/`;
+        
+        document.getElementById('modalEditar').style.display = 'flex';
+    }
+    
+    function fecharModalEditar() {
+        document.getElementById('modalEditar').style.display = 'none';
+    }
+
+    function showTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        
+        document.getElementById(tabName).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function deletarProduto(id) {
+        if(confirm('Tem certeza que deseja deletar este produto?')) {
+            fetch(`/deletar-produto/${id}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro ao deletar produto.');
+                }
+            });
+        }
+    }
+
+    let pedidoIdParaBaixa = null;
+
+    function darBaixa(id) {
+        pedidoIdParaBaixa = id;
+        const confirmModalAdmin = document.getElementById('confirmModalAdmin');
+        if (confirmModalAdmin) confirmModalAdmin.style.display = 'flex';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const confirmModalAdmin = document.getElementById('confirmModalAdmin');
+        const btnCancelAdmin = document.getElementById('btnCancelAdmin');
+        const btnAcceptAdmin = document.getElementById('btnAcceptAdmin');
+
+        if(btnCancelAdmin) {
+            btnCancelAdmin.addEventListener('click', () => {
+                if (confirmModalAdmin) confirmModalAdmin.style.display = 'none';
+                pedidoIdParaBaixa = null;
+            });
+        }
+
+        if(btnAcceptAdmin) {
+            btnAcceptAdmin.addEventListener('click', () => {
+                if(!pedidoIdParaBaixa) return;
+                const id = pedidoIdParaBaixa;
+                
+                const btnOriginal = document.querySelector(`button[onclick="darBaixa(${id})"]`) || document.getElementById(`btn-baixa-${id}`);
+                if(btnOriginal) {
+                    btnOriginal.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                    btnOriginal.disabled = true;
+                }
+                
+                if (confirmModalAdmin) confirmModalAdmin.style.display = 'none';
+
+                fetch(`/dar-baixa-pedido/${id}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        const badge = document.getElementById(`status-${id}`);
+                        if(badge) {
+                            badge.textContent = 'Retirado';
+                            badge.classList.remove('status-pendente');
+                            badge.classList.add('status-retirado');
+                        }
+                        if(btnOriginal) {
+                            btnOriginal.outerHTML = `<small>${data.data_retirada || 'Data não informada'}<br><span style="color:#64748b; font-size:0.75rem;">(Por: ${data.responsavel || 'Desconhecido'})</span></small>`;
+                        }
+                    } else {
+                        alert('Erro ao processar a baixa.');
+                        if(btnOriginal) {
+                            btnOriginal.innerHTML = 'Dar Baixa';
+                            btnOriginal.disabled = false;
+                        }
+                    }
+                    pedidoIdParaBaixa = null;
+                });
+            });
+        }
+    });
+</script>
+
+<!-- Modal de Confirmação Customizado Admin -->
+<div id="confirmModalAdmin" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 12px; padding: 2rem; width: 90%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: center; transform: translateY(-20px); animation: modalFadeIn 0.3s forwards;">
+        <div style="width: 60px; height: 60px; border-radius: 50%; background-color: #0d1b2a; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1.5rem auto;">
+            <i class="fa-solid fa-box-open"></i>
+        </div>
+        <h3 style="color: #1e293b; margin-bottom: 0.5rem; font-size: 1.25rem;">Confirmar Retirada?</h3>
+        <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 2rem;">Tem certeza que o funcionário já retirou este pedido fisicamente? O status mudará para "Retirado".</p>
+        
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+            <button id="btnCancelAdmin" style="padding: 0.6rem 1.5rem; border: 1px solid #cbd5e1; background: white; color: #475569; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1; transition: background 0.2s;">
+                Cancelar
+            </button>
+            <button id="btnAcceptAdmin" style="padding: 0.6rem 1.5rem; border: none; background: #0d1b2a; color: white; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1; transition: background 0.2s;">
+                Confirmar
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes modalFadeIn {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    #btnCancelAdmin:hover { background-color: #f8fafc !important; }
+    #btnAcceptAdmin:hover { background-color: #0284c7 !important; }
+</style>
+{% endblock %}

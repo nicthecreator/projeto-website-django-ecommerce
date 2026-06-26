@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PHD Store - Tela de Login</title>
-    <link rel="stylesheet" href="{% static "css/login.css" %}">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}?v=1.1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="{% static "home/images/favicon.ico" %}">
 </head>
@@ -13,7 +13,8 @@
     <div class="container">
         <div class="login-section">
             <div class="login-box">
-                <h1>PHD Store<br/>Faça seu login!</h1>
+                <img src="{% static 'images/logo-nav.png' %}" alt="Logo PHD Store" class="login-logo-mobile">
+                <h1 class="login-title-desktop">PHD Store<br/><span class="login-subtitle">Faça seu login!</span></h1>
                 
                 {% if error %}
         <div style="background-color: #fee2e2; color: #dc2626; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center; font-size: 14px;">

@@ -1,0 +1,63 @@
+{% load static %}
+<nav class="navbar">
+    <div class="nav-brand">
+        <a href="{% url 'index' %}">
+            <img src="{% static 'images/logo-nav.png' %}" alt="Logo" class="logo-nav">
+        </a>
+    </div>
+
+    <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <div class="nav-actions" id="navActions">
+        <div class="nav-links">
+            {% if user.is_authenticated %}
+                {% if user.is_staff or user.is_superuser or user.profile.is_rh %}
+                <style>
+                    .admin-link-nav, .rh-link-nav {
+                        color: white !important;
+                        font-weight: bold;
+                        transition: color 0.2s;
+                    }
+                    .admin-link-nav:hover, .rh-link-nav:hover {
+                        color: #e63946 !important;
+                    }
+                </style>
+                {% endif %}
+
+                {% if user.is_staff %}
+                <a href="{% url 'painel_admin' %}" class="profile-link admin-link-nav">
+                    <i class="fa-solid fa-lock"></i> Painel Admin
+                </a>
+                {% endif %}
+                
+                <a href="{% url 'perfil' %}" class="profile-link" id="profileBtn">
+                    <i class="fa-solid fa-circle-user"></i> Olá, {{ user.first_name|default:"Usuário" }}
+                </a>
+                
+                <a href="{% url 'minhas_compras' %}" class="profile-link">
+                    <i class="fa-solid fa-box-open"></i> Minhas Compras
+                </a>
+                
+                {% if user.is_superuser or user.profile.is_rh %}
+                <a href="{% url 'relatorio_rh' %}" class="profile-link rh-link-nav">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Relatório RH
+                </a>
+                {% endif %}
+                
+                <a href="{% url 'logout' %}" class="logout-link">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sair
+                </a>
+            {% else %}
+                <a href="{% url 'login' %}" class="login-link">
+                    <i class="fa-solid fa-user"></i> Fazer Login
+                </a>
+            {% endif %}
+        </div>
+
+        <a href="#" id="cart-btn" class="cart-btn-nav">
+            <i class="fa-solid fa-cart-shopping"></i> Carrinho (<span id="cart-count">0</span>)
+        </a>
+    </div>
+</nav>

@@ -10,6 +10,7 @@
 body {
     height: 100vh;
     background-color: #ffffff;
+    overflow: hidden;
 }
 
 .container {
@@ -35,6 +36,12 @@ body {
     font-size: 2rem;
     color: #1a1a1a;
     margin-bottom: 2rem;
+}
+
+.login-subtitle {
+    font-size: 1.1rem;
+    color: #777;
+    font-weight: 400;
 }
 
 .input-group {
@@ -147,33 +154,59 @@ body {
     text-align: center;
 }
 
+.illustration-content {
+    text-align: center;
+    width: 85%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .illustration {
-    max-width: 80%;
+    max-width: 95%;
     margin-bottom: 1rem;
-    margin-left: 4rem
+    margin-left: 1.5rem;
+    align-self: center;
 }
 
 .credits {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: #333;
     margin-bottom: 1.5rem;
 }
 
 .image-section h2 {
-    font-size: 1.25rem;
+    font-size: 1.4rem;
     font-weight: 500;
     line-height: 1.5;
+    color: #383A39;
 }
 
 /* Responsividade básica para telas menores */
+.login-logo-mobile {
+    display: none;
+    max-width: 250px;
+    margin: 0 auto 3rem auto;
+}
+
 @media (max-width: 768px) {
     .container {
         flex-direction: column;
     }
-    .login-section, .image-section {
+    .login-section {
         width: 100%;
+        flex: 1;
+        padding: 1.5rem;
+        text-align: center; /* Centraliza o logo no mobile */
     }
     .image-section {
         display: none; /* Oculta a imagem em telas muito pequenas (ex: mobile) */
+    }
+    .login-logo-mobile {
+        display: block;
+    }
+    /* Retorna o alinhamento do texto dos labels e links para esquerda, já que a section foi centralizada */
+    .input-group label, .options {
+        text-align: left;
     }
 }

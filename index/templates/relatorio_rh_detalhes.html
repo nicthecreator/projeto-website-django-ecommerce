@@ -1,0 +1,266 @@
+{% extends 'global/base.html' %}
+{% load static %}
+
+{% block title %}PHD Store - Detalhes do Funcionário{% endblock %}
+
+{% block content %}
+<main class="container" style="margin-top: 2rem; padding-bottom: 3rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="color: #1d3557; display: flex; align-items: center; gap: 10px; margin: 0;">
+            <i class="fa-solid fa-user-tag"></i> Histórico de {{ funcionario.first_name }}
+        </h2>
+        <a href="{% url 'relatorio_rh' %}?mes={{ mes_selecionado }}&ano={{ ano_selecionado }}" class="btn-action" style="background-color: #64748b; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px; display: inline-flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-arrow-left"></i> Voltar ao Relatório
+        </a>
+    </div>
+
+    <!-- Informações do Funcionário -->
+    <div style="background-color: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 2rem;">
+        <div>
+            <span style="font-size: 0.85rem; color: #64748b; display: block;">Nome Completo</span>
+            <strong style="color: #1e293b; font-size: 1.1rem;">{{ funcionario.first_name }}</strong>
+        </div>
+        <div>
+            <span style="font-size: 0.85rem; color: #64748b; display: block;">Matrícula</span>
+            <strong style="color: #1e293b; font-size: 1.1rem; font-family: monospace;">{{ funcionario.profile.matricula|default:"N/A" }}</strong>
+        </div>
+        <div>
+            <span style="font-size: 0.85rem; color: #64748b; display: block;">Celular</span>
+            <strong style="color: #1e293b; font-size: 1.1rem;">{{ funcionario.profile.celular|default:"N/A" }}</strong>
+        </div>
+        <div style="margin-left: auto; text-align: right; border-left: 2px solid #e2e8f0; padding-left: 2rem;">
+            <span style="font-size: 0.85rem; color: #64748b; display: block;">Total Gasto (Filtro)</span>
+            <strong style="color: #e63946; font-size: 1.4rem;">R$ {{ total_gasto|floatformat:2 }}</strong>
+        </div>
+    </div>
+
+    <!-- Histórico de Compras Agrupado por Mês -->
+    {% regroup pedidos by data_pedido|date:"F Y" as pedidos_por_mes %}
+
+    {% for mes_group in pedidos_por_mes %}
+    <div style="margin-bottom: 3rem;">
+        <h3 style="color: #1d3557; margin-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; text-transform: capitalize;">
+            <i class="fa-solid fa-calendar-days"></i> {{ mes_group.grouper }}
+        </h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            {% for pedido in mes_group.list %}
+            <div class="pedido-card" style="background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; overflow: hidden;">
+                <!-- Header do Pedido -->
+                <div style="background-color: #f8fafc; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0;">
+                    <div>
+                        <strong style="color: #1e293b;">Pedido #{{ pedido.id }}</strong>
+                        <span style="color: #64748b; margin-left: 10px; font-size: 0.9rem;">
+                            <i class="fa-regular fa-calendar"></i> {{ pedido.data_pedido|date:"d/m/Y H:i" }}
+                        </span>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <span style="font-weight: bold; color: #1e293b;">R$ {{ pedido.total|floatformat:2 }}</span>
+                        
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                            <button class="btn-baixa {% if pedido.descontado_rh %}baixado{% endif %}" 
+                                    data-pedido="{{ pedido.id }}"
+                                    {% if pedido.descontado_rh %}disabled{% endif %}
+                                    style="padding: 0.4rem 0.8rem; border: none; border-radius: 4px; cursor: {% if pedido.descontado_rh %}not-allowed{% else %}pointer{% endif %}; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                {% if pedido.descontado_rh %}
+                                    <i class="fa-solid fa-check"></i> Folha Baixada
+                                {% else %}
+                                    <i class="fa-solid fa-money-bill-transfer"></i> Dar Baixa na Folha
+                                {% endif %}
+                            </button>
+                            
+                            <small class="responsavel-texto" style="font-size: 0.75rem; color: #64748b; {% if not pedido.descontado_rh %}display: none;{% endif %}">
+                                (Por: <span class="responsavel-nome">
+                                    {% if pedido.responsavel_baixa %}
+                                        {{ pedido.responsavel_baixa.first_name|default:pedido.responsavel_baixa.username }}
+                                    {% endif %}
+                                </span>)
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Itens do Pedido -->
+                <div style="padding: 1rem 1.5rem;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+                        <thead>
+                            <tr style="color: #64748b; border-bottom: 1px solid #f1f5f9;">
+                                <th style="padding-bottom: 0.5rem; font-weight: 500;">Produto</th>
+                                <th style="padding-bottom: 0.5rem; font-weight: 500; text-align: center;">Qtd</th>
+                                <th style="padding-bottom: 0.5rem; font-weight: 500; text-align: right;">Preço Un.</th>
+                                <th style="padding-bottom: 0.5rem; font-weight: 500; text-align: right;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in pedido.itens.all %}
+                            <tr style="border-bottom: 1px solid #f8fafc;">
+                                <td style="padding: 0.8rem 0; color: #334155;">
+                                    <strong>{{ item.produto.nome }}</strong>
+                                    <br>
+                                    <small style="color: #94a3b8;"><i class="fa-solid fa-triangle-exclamation"></i> {{ item.produto.avaria }}</small>
+                                </td>
+                                <td style="padding: 0.8rem 0; text-align: center; color: #334155;">{{ item.quantidade }}x</td>
+                                <td style="padding: 0.8rem 0; text-align: right; color: #334155;">R$ {{ item.preco_unitario|floatformat:2 }}</td>
+                                <td style="padding: 0.8rem 0; text-align: right; color: #1e293b; font-weight: 500;">R$ {{ item.get_subtotal|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% empty %}
+    <div style="background-color: white; padding: 3rem; text-align: center; border-radius: 8px; color: #64748b; border: 1px dashed #cbd5e1;">
+        <i class="fa-solid fa-box-open" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+        <p>Nenhuma compra encontrada para este funcionário no período selecionado.</p>
+    </div>
+    {% endfor %}
+</main>
+
+<!-- Modal de Confirmação Customizado -->
+<div id="confirmModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 12px; padding: 2rem; width: 90%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: center; transform: translateY(-20px); animation: modalFadeIn 0.3s forwards;">
+        <div style="width: 60px; height: 60px; border-radius: 50%; background-color: #0d1b2a; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1.5rem auto;">
+            <i class="fa-solid fa-box-open"></i>
+        </div>
+        <h3 style="color: #1e293b; margin-bottom: 0.5rem; font-size: 1.25rem;">Confirmar Baixa?</h3>
+        <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 2rem;">Tem certeza que deseja dar baixa neste pedido na folha de pagamento? <strong>Esta ação não poderá ser desfeita.</strong></p>
+        
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+            <button id="btnCancelConfirm" style="padding: 0.6rem 1.5rem; border: 1px solid #cbd5e1; background: white; color: #475569; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1; transition: background 0.2s;">
+                Cancelar
+            </button>
+            <button id="btnAcceptConfirm" style="padding: 0.6rem 1.5rem; border: none; background: #0d1b2a; color: white; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1; transition: background 0.2s;">
+                Sim, Dar Baixa
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes modalFadeIn {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    #btnCancelConfirm:hover { background-color: #f8fafc !important; }
+    #btnAcceptConfirm:hover { background-color: #dc2626 !important; }
+
+    .btn-baixa {
+        background-color: #2563eb;
+        color: white;
+    }
+    .btn-baixa:hover:not(:disabled) {
+        background-color: #1d4ed8;
+    }
+    .btn-baixa.baixado, .btn-baixa:disabled {
+        background-color: #10b981;
+        color: white;
+        opacity: 0.8;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const botoesBaixa = document.querySelectorAll('.btn-baixa');
+    const confirmModal = document.getElementById('confirmModal');
+    const btnCancel = document.getElementById('btnCancelConfirm');
+    const btnAccept = document.getElementById('btnAcceptConfirm');
+    
+    let btnAtivo = null; // Guarda o botão que foi clicado
+    
+    function fecharModal() {
+        confirmModal.style.display = 'none';
+        btnAtivo = null;
+    }
+
+    btnCancel.addEventListener('click', fecharModal);
+
+    btnAccept.addEventListener('click', async () => {
+        if (!btnAtivo) return;
+        
+        const pedidoId = btnAtivo.getAttribute('data-pedido');
+        const originalHtml = btnAtivo.innerHTML;
+        const btnRef = btnAtivo; // Guarda referência pois fecharemos o modal
+        
+        fecharModal();
+        
+        btnRef.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
+        btnRef.style.opacity = '0.7';
+        btnRef.disabled = true;
+        btnRef.style.cursor = 'not-allowed';
+        
+        try {
+            const response = await fetch(`/relatorio-rh/dar-baixa/${pedidoId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                if (data.status === 'baixado') {
+                    btnRef.classList.add('baixado');
+                    btnRef.innerHTML = '<i class="fa-solid fa-check"></i> Folha Baixada';
+                    btnRef.disabled = true; // Impede clicar novamente
+                    
+                    // Mostra o nome de quem deu baixa
+                    const containerPai = btnRef.closest('div');
+                    const responsavelTexto = containerPai.querySelector('.responsavel-texto');
+                    const responsavelNome = containerPai.querySelector('.responsavel-nome');
+                    if (responsavelTexto && responsavelNome && data.responsavel) {
+                        responsavelNome.textContent = data.responsavel;
+                        responsavelTexto.style.display = 'block';
+                    }
+                }
+            } else {
+                alert('Erro: ' + (data.message || 'Falha ao atualizar'));
+                btnRef.innerHTML = originalHtml;
+                btnRef.style.opacity = '1';
+                btnRef.disabled = false;
+                btnRef.style.cursor = 'pointer';
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro de conexão ao tentar atualizar o status.');
+            btnRef.innerHTML = originalHtml;
+            btnRef.style.opacity = '1';
+            btnRef.disabled = false;
+            btnRef.style.cursor = 'pointer';
+        }
+    });
+
+    botoesBaixa.forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (this.disabled || this.classList.contains('baixado')) return;
+            
+            // Abre o modal customizado em vez do confirm nativo
+            btnAtivo = this;
+            confirmModal.style.display = 'flex';
+        });
+    });
+});
+
+// Função auxiliar para pegar o CSRF token se não houver um form
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

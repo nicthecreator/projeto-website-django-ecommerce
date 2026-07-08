@@ -1,0 +1,36 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<form action="" method="post">
+    {% csrf_token %}
+    <div>
+        <p>Você está prestes a dar baixa (marcar como descontado na folha) nos seguintes <strong>{{ queryset.count }}</strong> pedido(s):</p>
+        
+        <ul>
+            {% for pedido in queryset %}
+            <li>
+                Pedido #{{ pedido.id }} - Usuário: {{ pedido.usuario.first_name }} - Total: R$ {{ pedido.total }}
+                <input type="hidden" name="{{ action_checkbox_name }}" value="{{ pedido.pk }}" />
+            </li>
+            {% endfor %}
+        </ul>
+        
+        <input type="hidden" name="action" value="marcar_como_descontado" />
+        
+        <div style="margin-top: 20px; padding: 20px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 5px; max-width: 400px;">
+            <h3><i class="fa-solid fa-lock"></i> Confirmação do RH</h3>
+            <p>Para prosseguir, insira o Código ADS (5 dígitos):</p>
+            <input type="text" name="codigo_ads" id="codigo_ads" maxlength="5" pattern="\d{5}" required 
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                   style="padding: 10px; font-size: 1.2rem; width: 100%; border: 1px solid #ccc; border-radius: 4px;"
+                   placeholder="Ex: 12345">
+                   
+            <div style="margin-top: 20px;">
+                <input type="submit" name="apply" value="Confirmar Baixa na Folha" style="background-color: #2a9d8f; color: white; border: none; padding: 10px 15px; cursor: pointer; font-weight: bold; border-radius: 4px;" />
+                <a href="#" onclick="window.history.back(); return false;" style="margin-left: 10px; color: #666; text-decoration: none;">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

@@ -125,6 +125,17 @@ body {
     gap: 2rem;
 }
 
+.kanban-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.kanban-grid > div {
+    min-width: 0;
+}
+
 /* Product Card */
 .product-card {
     background: white;
@@ -520,5 +531,10 @@ footer {
     /* Mostrar botão flutuante no mobile */
     .cart-floating-btn {
         display: flex;
+    }
+
+    /* Transformar kanban dual em coluna única no mobile */
+    .kanban-grid {
+        grid-template-columns: 1fr;
     }
 }

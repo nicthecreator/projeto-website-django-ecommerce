@@ -16,7 +16,7 @@ from django.contrib.auth.models import User as AuthUser
 class Colaborador(models.Model):
     matricula = models.CharField(max_length=20, unique=True)
     nome = models.CharField(max_length=150)
-    email = models.EmailField(unique=True, blank=True, null=True)
+    cpf = models.CharField(max_length=14, blank=True, null=True, help_text="CPF do colaborador (com ou sem pontuação)")
     
     def __str__(self):
         return f"{self.matricula} - {self.nome}"
@@ -36,7 +36,7 @@ class Produto(models.Model):
     preco_original = models.DecimalField(max_digits=10, decimal_places=2)
     preco_desconto = models.DecimalField(max_digits=10, decimal_places=2)
     estoque = models.PositiveIntegerField(default=0)
-    limite_por_funcionario = models.PositiveIntegerField(default=1, help_text="Limite de compras a cada 24 horas por funcionário.")
+    limite_por_funcionario = models.PositiveIntegerField(default=1, help_text="Limite de compras por funcionário por ciclo de folha (até o RH dar baixa).")
     imagem_produto = models.ImageField(upload_to='produtos/', blank=True, null=True)
     data_cadastro = models.DateTimeField(auto_now_add=True)
 
@@ -60,6 +60,7 @@ class Pedido(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pendente')
     data_retirada = models.DateTimeField(blank=True, null=True)
     responsavel_retirada = models.ForeignKey(AuthUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='retiradas_realizadas')
+    codigo_ads = models.CharField(max_length=5, blank=True, null=True, help_text="Código ADS utilizado pelo RH durante a baixa.")
     
     def __str__(self):
         return f"Pedido #{self.id} - {self.usuario.first_name} - {self.status}"

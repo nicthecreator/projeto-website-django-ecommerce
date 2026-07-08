@@ -8,14 +8,13 @@
 }
 
 body {
-    height: 100vh;
+    min-height: 100vh;
     background-color: #ffffff;
-    overflow: hidden;
 }
 
 .container {
     display: flex;
-    height: 100vh;
+    min-height: 100vh;
 }
 
 /* Lado do Formulário */
@@ -140,6 +139,12 @@ body {
     color: #6c63ff;
     text-decoration: none;
     font-weight: 500;
+    transition: all 0.2s;
+}
+
+.signup-link a:hover {
+    color: #362f99;
+    text-decoration: underline;
 }
 
 /* Lado da Ilustração */

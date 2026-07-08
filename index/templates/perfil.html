@@ -173,7 +173,6 @@
                 <img src="https://ui-avatars.com/api/?name={{ user.first_name|default:'User' }}&background=1d3557&color=fff&size=80&rounded=true" alt="Avatar" class="avatar-img">
                 <div class="user-details">
                     <h3>{{ user.first_name|default:"Seu Nome" }}</h3>
-                    <p>{{ user.email }}</p>
                 </div>
             </div>
 
@@ -190,10 +189,7 @@
                     <input type="text" name="nome" value="{{ user.first_name }}" readonly class="readonly-input">
                 </div>
                 
-                <div class="form-row">
-                    <label>E-mail</label>
-                    <input type="email" name="email" value="{{ user.email }}" readonly class="readonly-input">
-                </div>
+
                 
                 <div class="form-row">
                     <label>Celular</label>

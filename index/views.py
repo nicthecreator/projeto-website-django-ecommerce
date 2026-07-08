@@ -14,40 +14,77 @@ from django.utils.http import urlsafe_base64_encode # Importação para codifica
 from django.utils.encoding import force_bytes # Importação para converter dados em bytes (necessário para codificação base64)
 from django.utils.http import urlsafe_base64_decode # Importação para decodificar o ID do usuário a partir da URL
 from django.utils.encoding import force_str # Importação para converter bytes de volta para string (necessário após decodificação base64
+import base64
+from django.core.files.base import ContentFile
+import uuid
 
 # MVT (MVC) => Model View Template (Controller)
 
 # Create your views here.
 
+from .models import Colaborador, UserProfile, Produto, Pedido, ItemPedido
+from django.contrib.auth.decorators import login_required
+
 def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('index')
+
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            email = data.get('email')
+            matricula = data.get('matricula')
             senha = data.get('senha')
-            # Recupera a preferência do usuário (padrão é False se não enviado)
             lembrar = data.get('lembrar', False)
 
-            try:
-                user_obj = User.objects.get(email=email)
-                user = authenticate(request, username=user_obj.username, password=senha)
-            except User.DoesNotExist:
-                user = None
+            if not matricula or not senha:
+                return JsonResponse({'success': False, 'message': 'Matrícula e senha são obrigatórios.'}, status=400)
+
+            # 1. Encontra o perfil do usuário correspondente à matrícula
+            user_profile = UserProfile.objects.filter(matricula=matricula).first()
+            user = None
+
+            if user_profile:
+                # Usuário antigo/existente
+                user = authenticate(request, username=user_profile.user.username, password=senha)
+                
+                # Se falhar, pode ser que a senha atual seja diferente do CPF (já que era livre antes)
+                # Como a regra mudou, vamos checar se a senha digitada bate com os 5 primeiros do CPF.
+                # Se bater, corrigimos a senha dele e logamos.
+                if user is None:
+                    try:
+                        colaborador = Colaborador.objects.get(matricula=matricula)
+                        if colaborador.cpf and senha == colaborador.cpf[:5]:
+                            user_profile.user.set_password(senha)
+                            user_profile.user.save()
+                            user = authenticate(request, username=user_profile.user.username, password=senha)
+                    except Colaborador.DoesNotExist:
+                        pass
+            else:
+                # Usuário novo (não tem UserProfile)
+                try:
+                    colaborador = Colaborador.objects.get(matricula=matricula)
+                    if colaborador.cpf and senha == colaborador.cpf[:5]:
+                        user = User.objects.create_user(
+                            username=matricula,
+                            email=f"{matricula}@phdstore.com",
+                            password=senha,
+                            first_name=colaborador.nome,
+                            is_active=True
+                        )
+                        UserProfile.objects.create(user=user, matricula=matricula)
+                        user = authenticate(request, username=matricula, password=senha)
+                except Colaborador.DoesNotExist:
+                    pass
 
             if user is not None:
                 login(request, user)
-                
-                # CONFIGURAÇÃO DA SESSÃO VIA DJANGO
                 if lembrar:
-                    # 1209600 segundos correspondem a exatamente 2 semanas mantendo o usuário logado
                     request.session.set_expiry(1209600)
                 else:
-                    # 0 significa que a sessão expira assim que o usuário fecha o navegador
                     request.session.set_expiry(0)
-
-                return JsonResponse({'success': True, 'redirect_url': '/'})
+                return JsonResponse({'success': True, 'redirect_url': '/loja/'})
             else:
-                return JsonResponse({'success': False, 'message': 'E-mail ou senha incorretos.'}, status=401)
+                return JsonResponse({'success': False, 'message': 'Matrícula ou senha incorretos.'}, status=401)
                 
         except Exception as e:
             return JsonResponse({'success': False, 'message': 'Erro interno no servidor.'}, status=500)
@@ -56,260 +93,15 @@ def login_view(request):
 
 def logout_view(request):
     logout(request)
-    return redirect('index')
+    return redirect('login')
 
 
-from .models import Colaborador, UserProfile
-
-def buscar_colaborador(request):
-    matricula = request.GET.get('matricula')
-    if not matricula:
-        return JsonResponse({'success': False, 'message': 'Matrícula não informada.'})
-    
-    try:
-        colaborador = Colaborador.objects.get(matricula=matricula)
-        # Verifica se alguém já se cadastrou com essa matrícula
-        if UserProfile.objects.filter(matricula=matricula).exists():
-            return JsonResponse({'success': False, 'message': 'Esta matrícula já possui um cadastro.'})
-            
-        return JsonResponse({
-            'success': True, 
-            'nome': colaborador.nome, 
-            'email': colaborador.email
-        })
-    except Colaborador.DoesNotExist:
-        return JsonResponse({'success': False, 'message': 'Matrícula não encontrada no sistema.'})
-
-def cadastro_view(request):
-    if request.method == 'GET':
-        return render(request, 'cadastro.html')
-    else:
-        matricula = request.POST.get('matricula', '').strip()
-        nome = request.POST.get('nome', '').strip() 
-        email = request.POST.get('email', '').strip().lower()
-        celular = request.POST.get('celular', '').strip()
-        senha = request.POST.get('senha')
-        confirma_senha = request.POST.get('confirma_senha')
-
-        if not matricula:
-            return render(request, 'cadastro.html', {'error': 'Matrícula é obrigatória.'})
-            
-        if not Colaborador.objects.filter(matricula=matricula).exists():
-            return render(request, 'cadastro.html', {'error': 'Matrícula inválida.'})
-
-        if UserProfile.objects.filter(matricula=matricula).exists():
-            return render(request, 'cadastro.html', {'error': 'Esta matrícula já está cadastrada.'})
-
-        if User.objects.filter(email=email).exists() or User.objects.filter(username=email).exists():
-            return render(request, 'cadastro.html', {'error': 'E-mail já cadastrado.'})
-
-        try:
-            # Em vez de sujar o banco de dados agora, salvamos na sessão
-            request.session['cadastro_data'] = {
-                'matricula': matricula,
-                'nome': nome,
-                'email': email,
-                'celular': celular,
-                'senha': senha
-            }
-
-            # Gera um código de 6 dígitos aleatório
-            codigo = str(random.randint(100000, 999999))
-            
-            # Salva o código e o e-mail na sessão do navegador
-            request.session['codigo_verificacao'] = codigo
-            request.session['email_verificacao'] = email
-
-            # Dispara o e-mail para o usuário
-            send_mail(
-                'Confirme sua conta - PHD Store',
-                f'Olá, {nome}! Seu código de verificação é: {codigo}',
-                'nao-responda@phdstore.com', # Remetente
-                [email],                     # Destinatário
-                fail_silently=False,
-            )
-
-            # Redireciona para a tela de digitar o código
-            return redirect('verificar_codigo')
-            
-        except Exception as e:
-            return render(request, 'cadastro.html', {'error': f'Erro interno: {str(e)}'})
-        
-
-# Nova View para processar o código digitado
-def verificar_codigo_view(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            codigo_digitado = data.get('codigo')
-            
-            # Resgata os dados que guardamos na sessão durante o cadastro
-            email_sessao = request.session.get('email_verificacao')
-            codigo_sessao = request.session.get('codigo_verificacao')
-            cadastro_data = request.session.get('cadastro_data')
-
-            if not email_sessao or not codigo_sessao or not cadastro_data:
-                return JsonResponse({'success': False, 'message': 'Sessão expirada. Refaça o cadastro.'}, status=400)
-
-            # Verifica se o código bate com o gerado
-            if codigo_digitado == codigo_sessao:
-                # Verifica novamente se já existe (segurança extra)
-                if UserProfile.objects.filter(matricula=cadastro_data['matricula']).exists():
-                    return JsonResponse({'success': False, 'message': 'Matrícula já cadastrada no meio tempo.'}, status=400)
-                    
-                # Cria o usuário finalmente como ATIVO
-                user = User.objects.create_user(
-                    username=cadastro_data['email'],
-                    email=cadastro_data['email'],
-                    password=cadastro_data['senha'],
-                    first_name=cadastro_data['nome'],
-                    is_active=True
-                )
-                
-                UserProfile.objects.create(
-                    user=user,
-                    matricula=cadastro_data['matricula'],
-                    celular=cadastro_data['celular']
-                )
-                
-                # Faz login automaticamente
-                from django.contrib.auth import login
-                login(request, user)
-                
-                # Limpa a sessão
-                del request.session['codigo_verificacao']
-                del request.session['email_verificacao']
-                del request.session['cadastro_data']
-                
-                return JsonResponse({'success': True, 'redirect_url': '/'})
-            else:
-                return JsonResponse({'success': False, 'message': 'Código inválido.'}, status=400)
-                
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Erro no servidor: {str(e)}'}, status=500)
-
-    # Se for GET, apenas mostra a página HTML
-    return render(request, 'verificar_codigo.html')
-
-def reenviar_codigo_view(request):
-    if request.method == 'POST':
-        # Busca o e-mail armazenado temporariamente na sessão do usuário
-        email = request.session.get('email_verificacao')
-        
-        if not email:
-            return JsonResponse({
-                'success': False, 
-                'message': 'Sessão expirada. Por favor, realize o cadastro novamente.'
-            }, status=400)
-
-        # Atualiza o código para um novo valor aleatório
-        novo_codigo = str(random.randint(100000, 999999))
-        request.session['codigo_verificacao'] = novo_codigo
-
-        try:
-            send_mail(
-                'Novo Código de Verificação - PHD Store',
-                f'Seu novo código de verificação é: {novo_codigo}',
-                'nao-responda@phdstore.com',
-                [email],
-                fail_silently=False,
-            )
-            return JsonResponse({'success': True, 'message': 'Novo código enviado!'})
-            
-        except Exception as e:
-            return JsonResponse({
-                'success': False, 
-                'message': 'Ocorreu um erro no servidor de e-mail ao tentar reenviar.'
-            }, status=500)
-
-def recuperar_senha_view(request):
-    if request.method == 'POST':
-        try:
-            # Captura o e-mail enviado pelo JavaScript (Fetch API)
-            data = json.loads(request.body)
-            email = data.get('email')
-
-            # Procura o usuário no banco de dados
-            user = User.objects.filter(email=email).first()
-
-            if user:
-                # 1. Gera uma identificação criptografada e um Token
-                uid = urlsafe_base64_encode(force_bytes(user.pk))
-                token = default_token_generator.make_token(user)
-
-                # 2. Monta o link com o domínio atual (ex: 127.0.0.1:8000)
-                dominio = request.get_host()
-                link = f"http://{dominio}/nova-senha/{uid}/{token}/"
-
-                # 3. Dispara o e-mail simulado para o terminal
-                send_mail(
-                    'Recuperação de Senha - PHD Store',
-                    f'Olá, {user.first_name}!\n\nRecebemos um pedido para redefinir sua senha.\nClique no link abaixo para criar uma nova senha:\n\n{link}\n\nSe você não solicitou isso, ignore este e-mail.',
-                    'nao-responda@phdstore.com',
-                    [email],
-                    fail_silently=False,
-                )
-
-            # Devolve um JSON que o JavaScript consegue ler (evitando o erro '<')
-            return JsonResponse({
-                'success': True, 
-                'message': 'Se o e-mail estiver cadastrado, você receberá um link em instantes.'
-            })
-
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': 'Erro ao processar a solicitação.'}, status=500)
-
-    # Se for apenas o carregamento normal da página (GET)
-    return render(request, 'recuperar_senha.html')
-
-def nova_senha_view(request, uidb64, token):
-    try:
-        # Descodifica o ID do utilizador enviado na URL
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
-
-    # Valida se o utilizador existe e se o token de segurança está correto e dentro do prazo
-    if user is not None and default_token_generator.check_token(user, token):
-        if request.method == 'POST':
-            try:
-                data = json.loads(request.body)
-                senha = data.get('senha')
-                confirma_senha = data.get('confirma_senha')
-
-                # Validações de segurança no servidor
-                if not senha or not confirma_senha:
-                    return JsonResponse({'success': False, 'message': 'Todos os campos são obrigatórios.'}, status=400)
-                if senha != confirma_senha:
-                    return JsonResponse({'success': False, 'message': 'As senhas não coincidem.'}, status=400)
-                if len(senha) < 6:
-                    return JsonResponse({'success': False, 'message': 'A senha deve conter pelo menos 6 caracteres.'}, status=400)
-                if not re.search(r'[A-Z]', senha) or not re.search(r'[a-z]', senha) or not re.search(r'\d', senha):
-                    return JsonResponse({'success': False, 'message': 'A senha deve conter pelo menos 1 letra maiúscula, 1 letra minúscula e 1 número.'}, status=400)
-
-                # Define e criptografa a nova palavra-passe no banco de dados
-                user.set_password(senha)
-                user.save()
-
-                return JsonResponse({
-                    'success': True, 
-                    'message': 'Palavra-passe alterada com sucesso!',
-                    'redirect_url': '/login/'
-                })
-            except Exception as e:
-                return JsonResponse({'success': False, 'message': 'Erro interno ao processar a redefinição.'}, status=500)
-
-        # Se a requisição for GET e o token for válido, exibe o formulário
-        return render(request, 'nova_senha.html', {'token_valido': True})
-    else:
-        # Se o link for inválido ou já tiver sido utilizado, renderiza com aviso de erro
-        return render(request, 'nova_senha.html', {'token_valido': False})
 
 
+@login_required(login_url='login')
 def index_view(request):
-    # Busca produtos com estoque maior que zero
-    produtos = Produto.objects.filter(estoque__gt=0).order_by('-id')
+    # Busca todos os produtos (incluindo os esgotados)
+    produtos = Produto.objects.all().order_by('-id')
     
     return render(request, 'index.html', {'produtos': produtos})
 
@@ -355,19 +147,17 @@ def verificar_limite_view(request):
             except Produto.DoesNotExist:
                 return JsonResponse({'success': False, 'message': 'Produto não encontrado.'})
                 
-            agora = timezone.now()
-            limite_24h = agora - timedelta(hours=24)
-            
-            compras_24h = ItemPedido.objects.filter(
+            compras_ativas = ItemPedido.objects.filter(
                 pedido__usuario=request.user,
                 produto=produto,
-                pedido__data_pedido__gte=limite_24h
-            ).exclude(pedido__status='Cancelado').aggregate(total_comprado=Sum('quantidade'))['total_comprado'] or 0
+                pedido__descontado_rh=False,
+                pedido__status__in=['Pendente', 'Retirado']
+            ).aggregate(Total=Sum('quantidade'))['Total'] or 0
             
-            if (compras_24h + qtd_solicitada) > produto.limite_por_funcionario:
+            if (compras_ativas + qtd_solicitada) > produto.limite_por_funcionario:
                 return JsonResponse({
-                    'success': False, 
-                    'message': f'O limite do produto "{produto.nome}" são {produto.limite_por_funcionario} unidades em 24h.'
+                    'status': 'error', 
+                    'message': f'O limite do produto "{produto.nome}" são {produto.limite_por_funcionario} unidades por ciclo de folha.'
                 })
                 
             return JsonResponse({'success': True})
@@ -387,9 +177,7 @@ def checkout_view(request):
             if not itens:
                 return JsonResponse({'success': False, 'message': 'O carrinho está vazio.'}, status=400)
                 
-            # Validar limites de 24h
-            agora = timezone.now()
-            limite_24h = agora - timedelta(hours=24)
+            # Calcular as compras não baixadas na folha pelo usuário para este produto
             
             produtos_validados = []
             
@@ -405,17 +193,24 @@ def checkout_view(request):
                     
                 qtd_solicitada = int(item.get('quantidade', 0))
                 
-                # Buscar quantidade comprada nas últimas 24h (ignorando cancelados)
-                compras_24h = ItemPedido.objects.filter(
+                # Buscar quantidade comprada não descontada no RH
+                compras_ativas = ItemPedido.objects.filter(
                     pedido__usuario=request.user,
                     produto=produto,
-                    pedido__data_pedido__gte=limite_24h
-                ).exclude(pedido__status='Cancelado').aggregate(total_comprado=Sum('quantidade'))['total_comprado'] or 0
+                    pedido__descontado_rh=False,
+                    pedido__status__in=['Pendente', 'Retirado']
+                ).aggregate(Total=Sum('quantidade'))['Total'] or 0
                 
-                if (compras_24h + qtd_solicitada) > produto.limite_por_funcionario:
+                if (compras_ativas + qtd_solicitada) > produto.limite_por_funcionario:
                     return JsonResponse({
                         'success': False, 
-                        'message': f'O limite do produto "{produto.nome}" são {produto.limite_por_funcionario} unidades em 24h.'
+                        'message': f'O limite do produto "{produto.nome}" são {produto.limite_por_funcionario} unidades por ciclo de folha.'
+                    }, status=400)
+                
+                if qtd_solicitada > produto.estoque:
+                    return JsonResponse({
+                        'success': False, 
+                        'message': f'Estoque insuficiente para "{produto.nome}". Temos apenas {produto.estoque} unidades disponíveis.'
                     }, status=400)
                     
                 produtos_validados.append({
@@ -443,9 +238,9 @@ def checkout_view(request):
                     preco_unitario=item_val['preco']
                 )
                 
-                # Opcional: Atualizar o estoque
-                # item_val['produto'].estoque -= item_val['quantidade']
-                # item_val['produto'].save()
+                # Atualizar o estoque
+                item_val['produto'].estoque -= item_val['quantidade']
+                item_val['produto'].save()
                 
             return JsonResponse({
                 'success': True,
@@ -497,7 +292,18 @@ def adicionar_produto(request):
         preco_desconto = request.POST.get('preco_desconto')
         estoque = request.POST.get('estoque', 0)
         limite_por_funcionario = request.POST.get('limite_por_funcionario', 1)
+        
         imagem_produto = request.FILES.get('imagem_produto')
+        imagem_cropped_base64 = request.POST.get('imagem_cropped_base64')
+        
+        if imagem_cropped_base64:
+            try:
+                format, imgstr = imagem_cropped_base64.split(';base64,') 
+                ext = format.split('/')[-1] 
+                filename = f"crop_{uuid.uuid4()}.{ext}"
+                imagem_produto = ContentFile(base64.b64decode(imgstr), name=filename)
+            except Exception:
+                pass
         
         try:
             Produto.objects.create(
@@ -539,7 +345,17 @@ def editar_produto(request, produto_id):
             produto.limite_por_funcionario = request.POST.get('limite_por_funcionario', 1)
             
             imagem_produto = request.FILES.get('imagem_produto')
-            if imagem_produto:
+            imagem_cropped_base64 = request.POST.get('imagem_cropped_base64')
+            
+            if imagem_cropped_base64:
+                try:
+                    format, imgstr = imagem_cropped_base64.split(';base64,') 
+                    ext = format.split('/')[-1] 
+                    filename = f"crop_{uuid.uuid4()}.{ext}"
+                    produto.imagem_produto = ContentFile(base64.b64decode(imgstr), name=filename)
+                except Exception:
+                    pass
+            elif imagem_produto:
                 produto.imagem_produto = imagem_produto
                 
             produto.save()
@@ -590,7 +406,8 @@ def dar_baixa_pedido(request, pedido_id):
             
     return JsonResponse({'success': False, 'message': 'Método inválido'}, status=405)
 
-from django.db.models import Q
+from django.db.models import Q, F
+from django.db.models.functions import TruncMonth
 from datetime import datetime
 
 @login_required(login_url='login')
@@ -609,17 +426,25 @@ def relatorio_rh_view(request):
     mes = request.GET.get('mes', '')
     ano = request.GET.get('ano', '')
     
-    # Filtro base ignorando cancelados
-    filtro_pedidos = ~Q(pedidos__status='Cancelado')
+    pedidos_resumo = Pedido.objects.exclude(status='Cancelado')
     
     if mes:
-        filtro_pedidos &= Q(pedidos__data_pedido__month=int(mes))
+        pedidos_resumo = pedidos_resumo.filter(data_pedido__month=int(mes))
     if ano:
-        filtro_pedidos &= Q(pedidos__data_pedido__year=int(ano))
+        pedidos_resumo = pedidos_resumo.filter(data_pedido__year=int(ano))
         
-    usuarios = User.objects.filter(is_active=True, is_staff=False).annotate(
-        total_gasto=Sum('pedidos__total', filter=filtro_pedidos)
-    ).order_by('first_name')
+    usuarios = pedidos_resumo.annotate(
+        mes_ano=TruncMonth('data_pedido')
+    ).values(
+        'usuario__id', 
+        'usuario__first_name', 
+        'usuario__profile__matricula', 
+        'usuario__profile__celular', 
+        'mes_ano',
+        'descontado_rh'
+    ).annotate(
+        total_gasto=Sum('total')
+    ).order_by('-mes_ano', 'descontado_rh', 'usuario__first_name')
     
     # Lista de anos (para o filtro), pegando os anos distintos dos pedidos
     anos_disponiveis = Pedido.objects.dates('data_pedido', 'year', order='DESC')
@@ -688,14 +513,23 @@ def dar_baixa_rh_view(request, pedido_id):
         
     if request.method == 'POST':
         try:
+            import json
+            data = json.loads(request.body) if request.body else {}
+            codigo_ads = data.get('codigo_ads', '').strip()
+            
+            if not codigo_ads or len(codigo_ads) != 5 or not codigo_ads.isdigit():
+                return JsonResponse({'success': False, 'message': 'Código ADS inválido. Deve conter 5 dígitos.'}, status=400)
+                
             pedido = Pedido.objects.get(id=pedido_id)
             pedido.descontado_rh = True
             pedido.responsavel_baixa = request.user
+            pedido.codigo_ads = codigo_ads
             pedido.save()
             return JsonResponse({
                 'success': True, 
                 'status': 'baixado',
-                'responsavel': request.user.first_name or request.user.username
+                'responsavel': request.user.first_name or request.user.username,
+                'codigo_ads': codigo_ads
             })
         except Pedido.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Pedido não encontrado'}, status=404)

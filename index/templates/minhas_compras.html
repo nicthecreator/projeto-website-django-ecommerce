@@ -166,9 +166,22 @@
                         <div class="order-id">Pedido #{{ pedido.id|stringformat:"05d" }}</div>
                         <div class="order-date"><i class="fa-regular fa-calendar"></i> {{ pedido.data_pedido|date:"d/m/Y H:i" }}</div>
                         <div class="order-items">
-                            <strong>Itens:</strong> 
+                            <strong>Itens:</strong><br>
                             {% for item in pedido.itens.all %}
-                                {{ item.quantidade }}x {{ item.produto_nome }}{% if not forloop.last %}, {% endif %}
+                                &bull; {{ item.quantidade }}x {{ item.produto_nome }}
+                                <span style="font-size: 0.85em; color: #666; margin-left: 5px;">
+                                    (Estoque atual: 
+                                    {% if item.produto %}
+                                        {% if item.produto.estoque == 0 %}
+                                            <span style="color: #e63946; font-weight: bold;">Esgotado</span>
+                                        {% else %}
+                                            {{ item.produto.estoque }}
+                                        {% endif %}
+                                    {% else %}
+                                        Excluído
+                                    {% endif %})
+                                </span>
+                                {% if not forloop.last %}<br>{% endif %}
                             {% endfor %}
                         </div>
                     </div>

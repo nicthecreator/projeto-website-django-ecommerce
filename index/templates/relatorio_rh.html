@@ -48,40 +48,101 @@
         </form>
     </div>
 
-    <div style="background-color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
-            <thead>
-                <tr style="background-color: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
-                    <th style="padding: 1rem; color: #1e293b; font-weight: 600;">Funcionário</th>
-                    <th style="padding: 1rem; color: #1e293b; font-weight: 600;">Matrícula</th>
-                    <th style="padding: 1rem; color: #1e293b; font-weight: 600;">Celular</th>
-                    <th style="padding: 1rem; color: #1e293b; font-weight: 600;">Total Gasto (R$)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for usr in usuarios %}
-                <tr style="border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
-                    <td style="padding: 1rem;">
-                        <a href="{% url 'relatorio_rh_detalhes' usr.id %}?mes={{ mes_selecionado }}&ano={{ ano_selecionado }}" style="color: #2563eb; font-weight: 500; text-decoration: none;">
-                            {{ usr.first_name }}
-                        </a>
-                    </td>
-                    <td style="padding: 1rem; color: #475569; font-family: monospace;">{{ usr.profile.matricula|default:"N/A" }}</td>
-                    <td style="padding: 1rem; color: #475569;">{{ usr.profile.celular|default:"N/A" }}</td>
-                    <td style="padding: 1rem; color: #e63946; font-weight: bold;">
-                        R$ {{ usr.total_gasto|default:0.00|floatformat:2 }}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" style="padding: 2rem; text-align: center; color: #64748b;">
-                        Nenhum registro encontrado para este filtro.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    {% regroup usuarios by mes_ano as usuarios_por_mes %}
+
+    {% for mes_group in usuarios_por_mes %}
+    <h3 style="color: #1d3557; margin-top: 2rem; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e2e8f0; text-transform: capitalize;">
+        <i class="fa-solid fa-calendar-days"></i> {{ mes_group.grouper|date:"F \d\e Y" }}
+    </h3>
+    
+    <div class="kanban-grid" style="margin-bottom: 3rem;">
+        
+        <!-- Lado Esquerdo: Pendentes -->
+        <div style="background-color: #fef9c3; border-radius: 8px; border: 1px solid #fef08a; padding: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <h4 style="color: #b45309; margin: 0 0 1rem 0; border-bottom: 2px solid #fde047; padding-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+                <span><i class="fa-solid fa-clock"></i> Pendentes de Baixa</span>
+            </h4>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #fde047;">
+                            <th style="padding: 0.8rem; color: #78350f; font-weight: 600;">Funcionário</th>
+                            <th style="padding: 0.8rem; color: #78350f; font-weight: 600;">Total (R$)</th>
+                            <th style="padding: 0.8rem; color: #78350f; font-weight: 600; text-align: center;">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usr in mes_group.list %}
+                        {% if not usr.descontado_rh %}
+                        <tr style="border-bottom: 1px solid #fef08a; transition: background-color 0.2s;">
+                            <td style="padding: 0.8rem;">
+                                <a href="{% url 'relatorio_rh_detalhes' usr.usuario__id %}?mes={{ usr.mes_ano|date:'n' }}&ano={{ usr.mes_ano|date:'Y' }}" style="color: #b45309; font-weight: bold; text-decoration: none;">
+                                    {{ usr.usuario__first_name }}
+                                </a>
+                                <br><small style="color: #d97706; font-family: monospace;">{{ usr.usuario__profile__matricula|default:"N/A" }}</small>
+                            </td>
+                            <td style="padding: 0.8rem; color: #dc2626; font-weight: bold;">
+                                {{ usr.total_gasto|default:0.00|floatformat:2 }}
+                            </td>
+                            <td style="padding: 0.8rem; text-align: center;">
+                                <a href="{% url 'relatorio_rh_detalhes' usr.usuario__id %}?mes={{ usr.mes_ano|date:'n' }}&ano={{ usr.mes_ano|date:'Y' }}" style="display: inline-block; padding: 0.4rem 0.8rem; background-color: #f59e0b; color: white; border-radius: 4px; text-decoration: none; font-size: 0.85rem; font-weight: bold;">
+                                    Ver e Baixar
+                                </a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Lado Direito: Baixados -->
+        <div style="background-color: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0; padding: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <h4 style="color: #15803d; margin: 0 0 1rem 0; border-bottom: 2px solid #86efac; padding-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+                <span><i class="fa-solid fa-check-double"></i> Já Baixados na Folha</span>
+            </h4>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #86efac;">
+                            <th style="padding: 0.8rem; color: #14532d; font-weight: 600;">Funcionário</th>
+                            <th style="padding: 0.8rem; color: #14532d; font-weight: 600;">Total (R$)</th>
+                            <th style="padding: 0.8rem; color: #14532d; font-weight: 600; text-align: center;">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usr in mes_group.list %}
+                        {% if usr.descontado_rh %}
+                        <tr style="border-bottom: 1px solid #bbf7d0; transition: background-color 0.2s;">
+                            <td style="padding: 0.8rem;">
+                                <a href="{% url 'relatorio_rh_detalhes' usr.usuario__id %}?mes={{ usr.mes_ano|date:'n' }}&ano={{ usr.mes_ano|date:'Y' }}" style="color: #15803d; font-weight: bold; text-decoration: none;">
+                                    {{ usr.usuario__first_name }}
+                                </a>
+                                <br><small style="color: #16a34a; font-family: monospace;">{{ usr.usuario__profile__matricula|default:"N/A" }}</small>
+                            </td>
+                            <td style="padding: 0.8rem; color: #16a34a; font-weight: bold;">
+                                {{ usr.total_gasto|default:0.00|floatformat:2 }}
+                            </td>
+                            <td style="padding: 0.8rem; text-align: center;">
+                                <a href="{% url 'relatorio_rh_detalhes' usr.usuario__id %}?mes={{ usr.mes_ano|date:'n' }}&ano={{ usr.mes_ano|date:'Y' }}" style="display: inline-block; padding: 0.4rem 0.8rem; background-color: #10b981; color: white; border-radius: 4px; text-decoration: none; font-size: 0.85rem; font-weight: bold;">
+                                    Ver Histórico
+                                </a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
+    {% empty %}
+    <div style="background-color: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; color: #64748b;">
+        Nenhum registro encontrado para este filtro.
+    </div>
+    {% endfor %}
 </main>
 
 <style>

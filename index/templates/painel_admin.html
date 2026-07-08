@@ -4,6 +4,8 @@
 {% block title %}Painel Administrativo - PHD Store{% endblock %}
 
 {% block extra_head %}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <style>
         .admin-container {
             width: 100%;
@@ -112,22 +114,44 @@
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
-            align-items: center;
+            text-align: left;
         }
 
         .form-group label {
             width: 100%;
-            max-width: 400px;
-            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #334155;
+            margin-bottom: -2px;
         }
 
-        .form-group input {
-            padding: 0.8rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 0.8rem 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
             width: 100%;
-            max-width: 400px;
-            text-align: left;
+            font-size: 1rem;
+            color: #1e293b;
+            background-color: #f8fafc;
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .form-group input:hover {
+            border-color: #94a3b8;
+        }
+        
+        .form-group input[type="file"] {
+            padding: 0.5rem;
+            background-color: white;
+            border: 1px dashed #cbd5e1;
+            cursor: pointer;
         }
 
         .img-preview {
@@ -173,9 +197,11 @@
 
             /* Permite rolagem horizontal nas tabelas sem quebrar o layout */
             table {
-                display: block;
-                overflow-x: auto;
                 white-space: nowrap;
+            }
+            
+            .kanban-grid {
+                grid-template-columns: 1fr !important;
             }
             
             .add-product-card {
@@ -237,7 +263,17 @@
                     </div>
                     <div class="form-group">
                         <label>Foto do Produto</label>
-                        <input type="file" name="imagem_produto" accept="image/*" required>
+                        <input type="file" id="imagem_produto_add" name="imagem_produto" accept="image/*" required>
+                        <input type="hidden" id="imagem_produto_base64_add" name="imagem_cropped_base64">
+                        
+                        <div id="preview_container_add" style="display: none; margin-top: 15px; text-align: center; width: 100%;">
+                            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 5px;">Preview do Recorte:</p>
+                            <img id="preview_img_add" src="" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid #e2e8f0; margin-bottom: 10px;">
+                            <div style="display: flex; gap: 10px; justify-content: center;">
+                                <button type="button" id="btn_reedit_add" class="btn-action" style="background: #f59e0b; color: white; padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fa-solid fa-crop-simple"></i> Re-enquadrar</button>
+                                <button type="button" id="btn_reset_add" class="btn-action btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fa-solid fa-trash"></i> Trocar Foto</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <button type="submit" class="btn-action btn-success" style="margin-top: 1rem; width: 100%;">Cadastrar Produto</button>
@@ -245,89 +281,143 @@
         </div>
 
         <h3>Catálogo Atual</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Foto</th>
-                    <th>Nome</th>
-                    <th>Avaria</th>
-                    <th>Preço</th>
-                    <th>Estoque</th>
-                    <th>Limite (24h)</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in produtos %}
-                <tr>
-                    <td>
-                        {% if p.imagem_produto %}
-                            <img src="{{ p.imagem_produto.url }}" class="img-preview">
-                        {% else %}
-                            <img src="https://via.placeholder.com/50" class="img-preview">
-                        {% endif %}
-                    </td>
-                    <td>{{ p.nome }}</td>
-                    <td>{{ p.avaria }}</td>
-                    <td>R$ {{ p.preco_desconto }}</td>
-                    <td>{{ p.estoque }} un</td>
-                    <td>{{ p.limite_por_funcionario }} un</td>
-                    <td>
-                        <button onclick="abrirModalEditar({{ p.id }}, '{{ p.nome|escapejs }}', '{{ p.avaria|escapejs }}', '{{ p.preco_original|escapejs }}', '{{ p.preco_desconto|escapejs }}', {{ p.estoque }}, {{ p.limite_por_funcionario }})" class="btn-action btn-success" style="background:#0284c7; color:white; margin-right:5px;"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="deletarProduto({{ p.id }})" class="btn-action btn-danger"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="6" style="text-align: center;">Nenhum produto cadastrado.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div style="overflow-x: auto; width: 100%;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Foto</th>
+                        <th>Nome</th>
+                        <th>Avaria</th>
+                        <th>Preço</th>
+                        <th>Estoque</th>
+                        <th>Limite (24h)</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in produtos %}
+                    <tr>
+                        <td>
+                            {% if p.imagem_produto %}
+                                <img src="{{ p.imagem_produto.url }}" class="img-preview">
+                            {% else %}
+                                <img src="https://via.placeholder.com/50" class="img-preview">
+                            {% endif %}
+                        </td>
+                        <td>{{ p.nome }}</td>
+                        <td>{{ p.avaria }}</td>
+                        <td>R$ {{ p.preco_desconto }}</td>
+                        <td>{{ p.estoque }} un</td>
+                        <td>{{ p.limite_por_funcionario }} un</td>
+                        <td>
+                            <button onclick="abrirModalEditar({{ p.id }}, '{{ p.nome|escapejs }}', '{{ p.avaria|escapejs }}', '{{ p.preco_original|escapejs }}', '{{ p.preco_desconto|escapejs }}', {{ p.estoque }}, {{ p.limite_por_funcionario }})" class="btn-action btn-success" style="background:#0284c7; color:white; margin-right:5px;"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deletarProduto({{ p.id }})" class="btn-action btn-danger"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" style="text-align: center;">Nenhum produto cadastrado.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- ABA PEDIDOS -->
     <div id="pedidos" class="tab-content">
-        <h3>Lista de Pedidos</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Pedido #</th>
-                    <th>Funcionário</th>
-                    <th>Data da Compra</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                    <th>Ação</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in pedidos %}
-                <tr>
-                    <td>#{{ p.id }}</td>
-                    <td>{{ p.usuario.first_name }}</td>
-                    <td>{{ p.data_pedido|date:"d/m/Y H:i" }}</td>
-                    <td>R$ {{ p.total }}</td>
-                    <td>
-                        <span class="status-badge {% if p.status == 'Pendente' %}status-pendente{% else %}status-retirado{% endif %}" id="status-{{ p.id }}">
-                            {{ p.status }}
-                        </span>
-                    </td>
-                    <td>
-                        {% if p.status == 'Pendente' %}
-                            <button id="btn-baixa-{{ p.id }}" onclick="darBaixa({{ p.id }})" class="btn-action btn-success">Dar Baixa</button>
-                        {% else %}
-                            <small id="data-retirada-{{ p.id }}">
-                                {{ p.data_retirada|date:"d/m/Y H:i" }}
-                                {% if p.responsavel_retirada %}
-                                    <br><span style="color:#64748b; font-size:0.75rem;">(Por: {{ p.responsavel_retirada.first_name|default:p.responsavel_retirada.username }})</span>
-                                {% endif %}
-                            </small>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="6" style="text-align: center;">Nenhum pedido realizado.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="kanban-grid">
+            
+            <!-- Pendentes -->
+            <div style="background-color: #fef9c3; border-radius: 8px; border: 1px solid #fef08a; padding: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <h4 style="color: #b45309; margin: 0 0 1rem 0; border-bottom: 2px solid #fde047; padding-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="fa-solid fa-clock"></i> Aguardando Retirada</span>
+                </h4>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr style="background-color: #fde047; color: #78350f;">
+                                <th>Pedido #</th>
+                                <th>Funcionário</th>
+                                <th>Itens</th>
+                                <th>Status</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-pendentes">
+                            {% for p in pedidos %}
+                            {% if p.status == 'Pendente' %}
+                            <tr id="tr-pedido-{{ p.id }}" style="border-bottom: 1px solid #fef08a;">
+                                <td style="font-weight: bold; color: #b45309;">#{{ p.id }}<br><small style="color: #d97706; font-weight: normal;">{{ p.data_pedido|date:"d/m/Y H:i" }}</small></td>
+                                <td>{{ p.usuario.first_name }}</td>
+                                <td style="font-size: 0.85rem; color: #475569;">
+                                    {% for item in p.itens.all %}
+                                        <div>&bull; {{ item.quantidade }}x {{ item.produto_nome }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    <span class="status-badge status-pendente" id="status-{{ p.id }}">
+                                        {{ p.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button id="btn-baixa-{{ p.id }}" onclick="darBaixa({{ p.id }})" class="btn-action btn-success">Dar Baixa</button>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Retirados -->
+            <div style="background-color: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0; padding: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <h4 style="color: #15803d; margin: 0 0 1rem 0; border-bottom: 2px solid #86efac; padding-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="fa-solid fa-check-double"></i> Já Retirados</span>
+                </h4>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr style="background-color: #86efac; color: #14532d;">
+                                <th>Pedido #</th>
+                                <th>Funcionário</th>
+                                <th>Itens</th>
+                                <th>Status</th>
+                                <th>Retirada</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-baixados">
+                            {% for p in pedidos %}
+                            {% if p.status != 'Pendente' %}
+                            <tr id="tr-pedido-{{ p.id }}" style="border-bottom: 1px solid #bbf7d0;">
+                                <td style="font-weight: bold; color: #15803d;">#{{ p.id }}<br><small style="color: #16a34a; font-weight: normal;">{{ p.data_pedido|date:"d/m/Y H:i" }}</small></td>
+                                <td>{{ p.usuario.first_name }}</td>
+                                <td style="font-size: 0.85rem; color: #475569;">
+                                    {% for item in p.itens.all %}
+                                        <div>&bull; {{ item.quantidade }}x {{ item.produto_nome }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    <span class="status-badge status-retirado" id="status-{{ p.id }}">
+                                        {{ p.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small id="data-retirada-{{ p.id }}">
+                                        {{ p.data_retirada|date:"d/m/Y H:i" }}
+                                        {% if p.responsavel_retirada %}
+                                            <br><span style="color:#64748b; font-size:0.75rem;">(Por: {{ p.responsavel_retirada.first_name|default:p.responsavel_retirada.username }})</span>
+                                        {% endif %}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -370,8 +460,18 @@
                     </div>
                     <div class="form-group" style="grid-column: span 2;">
                         <label>Nova Foto (opcional)</label>
-                        <input type="file" name="imagem_produto" accept="image/*">
-                        <small style="color:#64748b;">Deixe em branco para manter a foto atual.</small>
+                        <input type="file" id="imagem_produto_edit" name="imagem_produto" accept="image/*">
+                        <input type="hidden" id="imagem_produto_base64_edit" name="imagem_cropped_base64">
+                        <small id="help_foto_edit" style="color:#64748b;">Deixe em branco para manter a foto atual.</small>
+
+                        <div id="preview_container_edit" style="display: none; margin-top: 15px; text-align: center; width: 100%;">
+                            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 5px;">Preview do Novo Recorte:</p>
+                            <img id="preview_img_edit" src="" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid #e2e8f0; margin-bottom: 10px;">
+                            <div style="display: flex; gap: 10px; justify-content: center;">
+                                <button type="button" id="btn_reedit_edit" class="btn-action" style="background: #f59e0b; color: white; padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fa-solid fa-crop-simple"></i> Re-enquadrar</button>
+                                <button type="button" id="btn_reset_edit" class="btn-action btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fa-solid fa-trash"></i> Trocar Foto</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -383,7 +483,130 @@
         </div>
     </div>
 
+<!-- Modal do Cropper.js -->
+<div id="cropModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1100; align-items:center; justify-content:center;">
+    <div style="background:white; padding:2rem; border-radius:8px; max-width:600px; width:90%; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; margin-bottom:1rem; color:#1d3557;"><i class="fa-solid fa-crop-simple"></i> Recortar Imagem</h3>
+        <div style="width: 100%; height: 350px; background: #eee; overflow: hidden; margin-bottom: 1.5rem;">
+            <img id="imageToCrop" src="" style="max-width: 100%;">
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button type="button" id="btnCropApply" class="btn-action btn-success" style="flex:1;">Aplicar Recorte</button>
+            <button type="button" id="btnCropCancel" class="btn-action" style="flex:1; background:#e63946; color:white;">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    let cropper = null;
+    let currentInputTarget = null;
+    let currentBase64Target = null;
+    const cropModal = document.getElementById('cropModal');
+    const imageToCrop = document.getElementById('imageToCrop');
+    
+    function initCropper(fileInput, hiddenBase64Input) {
+        fileInput.addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                const file = files[0];
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imageToCrop.src = event.target.result;
+                    currentInputTarget = fileInput;
+                    currentBase64Target = hiddenBase64Input;
+                    cropModal.style.display = 'flex';
+                    
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    
+                    cropper = new Cropper(imageToCrop, {
+                        aspectRatio: 1, // 1:1 quadrado
+                        viewMode: 1,
+                        background: false
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initCropper(
+            document.getElementById('imagem_produto_add'),
+            document.getElementById('imagem_produto_base64_add')
+        );
+        initCropper(
+            document.getElementById('imagem_produto_edit'),
+            document.getElementById('imagem_produto_base64_edit')
+        );
+    });
+
+    document.getElementById('btnCropApply').addEventListener('click', () => {
+        if (!cropper) return;
+        const canvas = cropper.getCroppedCanvas({
+            width: 800,
+            height: 800
+        });
+        
+        const base64Data = canvas.toDataURL('image/jpeg', 0.85);
+        currentBase64Target.value = base64Data;
+        
+        let suffix = currentInputTarget.id.includes('add') ? 'add' : 'edit';
+        
+        document.getElementById('preview_img_' + suffix).src = base64Data;
+        document.getElementById('preview_container_' + suffix).style.display = 'block';
+        currentInputTarget.style.display = 'none';
+        
+        if (suffix === 'add') {
+            currentInputTarget.removeAttribute('required');
+        } else {
+            document.getElementById('help_foto_edit').style.display = 'none';
+        }
+        
+        cropModal.style.display = 'none';
+        // Não destruímos o cropper para permitir o re-enquadramento da mesma imagem!
+    });
+    
+    document.getElementById('btnCropCancel').addEventListener('click', () => {
+        cropModal.style.display = 'none';
+        // Se já houver um recorte salvo no hidden, o usuário apenas cancelou a tentativa de re-editar.
+        // Portanto, se o currentBase64Target estiver VAZIO, nós resetamos o input.
+        if (!currentBase64Target.value) {
+            currentInputTarget.value = ''; 
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        }
+    });
+    
+    // Funções para os botões de Re-enquadrar
+    document.getElementById('btn_reedit_add').addEventListener('click', () => { cropModal.style.display = 'flex'; });
+    document.getElementById('btn_reedit_edit').addEventListener('click', () => { cropModal.style.display = 'flex'; });
+    
+    // Funções para os botões de Trocar Arquivo
+    function resetarUpload(suffix) {
+        document.getElementById('imagem_produto_' + suffix).value = '';
+        document.getElementById('imagem_produto_' + suffix).style.display = 'block';
+        document.getElementById('imagem_produto_base64_' + suffix).value = '';
+        document.getElementById('preview_container_' + suffix).style.display = 'none';
+        
+        if (suffix === 'add') {
+            document.getElementById('imagem_produto_' + suffix).setAttribute('required', 'required');
+        } else {
+            document.getElementById('help_foto_edit').style.display = 'block';
+        }
+        
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+    }
+    
+    document.getElementById('btn_reset_add').addEventListener('click', () => resetarUpload('add'));
+    document.getElementById('btn_reset_edit').addEventListener('click', () => resetarUpload('edit'));
+
     function abrirModalEditar(id, nome, avaria, precoOriginal, precoDesconto, estoque, limite) {
         document.getElementById('edit_nome').value = nome;
         document.getElementById('edit_avaria').value = avaria;
@@ -486,6 +709,9 @@
                 .then(res => res.json())
                 .then(data => {
                     if(data.success) {
+                        const tr = document.getElementById(`tr-pedido-${id}`);
+                        const tbodyBaixados = document.getElementById('tbody-baixados');
+                        
                         const badge = document.getElementById(`status-${id}`);
                         if(badge) {
                             badge.textContent = 'Retirado';
@@ -494,6 +720,21 @@
                         }
                         if(btnOriginal) {
                             btnOriginal.outerHTML = `<small>${data.data_retirada || 'Data não informada'}<br><span style="color:#64748b; font-size:0.75rem;">(Por: ${data.responsavel || 'Desconhecido'})</span></small>`;
+                        }
+                        
+                        // Mover a linha visualmente para a tabela da direita
+                        if (tr && tbodyBaixados) {
+                            tr.style.opacity = '0';
+                            setTimeout(() => {
+                                // Mudar as cores pra verde
+                                tr.style.borderBottom = '1px solid #bbf7d0';
+                                const tdId = tr.querySelector('td');
+                                if(tdId) tdId.style.color = '#15803d';
+                                
+                                tbodyBaixados.insertBefore(tr, tbodyBaixados.firstChild);
+                                tr.style.transition = 'opacity 0.3s';
+                                tr.style.opacity = '1';
+                            }, 300);
                         }
                     } else {
                         alert('Erro ao processar a baixa.');

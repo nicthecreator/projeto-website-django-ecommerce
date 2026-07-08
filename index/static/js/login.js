@@ -18,7 +18,7 @@ if (togglePassword && senhaInput) {
 document.getElementById('loginForm').addEventListener('submit', function(event) {
     event.preventDefault(); 
 
-    const email = document.getElementById('email').value;
+    const matricula = document.getElementById('matricula').value;
     const senha = document.getElementById('senha').value;
     
     // CAPTURA SE O CHECKBOX ESTÁ MARCADO (retorna true ou false)
@@ -35,7 +35,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
             'X-CSRFToken': csrfToken
         },
         body: JSON.stringify({ 
-            email: email, 
+            matricula: matricula, 
             senha: senha, 
             lembrar: lembrar 
         })
@@ -59,7 +59,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
         divErro.id = 'erro-login-box';
         divErro.style.cssText = "background-color: #fee2e2; color: #dc2626; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center; font-size: 14px;";
         
-        const mensagemErro = error.message || 'E-mail ou senha incorretos.';
+        const mensagemErro = error.message || 'Matrícula ou senha incorretos.';
         divErro.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${mensagemErro}`;
 
         const h1 = document.querySelector('.login-box h1');

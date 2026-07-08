@@ -210,9 +210,23 @@
                         <div class="ticket-items">
                             <div class="ticket-label" style="margin-bottom: 10px;">Itens do Pedido:</div>
                             {% for item in pedido.itens.all %}
-                            <div class="ticket-item">
-                                <span>{{ item.quantidade }}x {{ item.produto_nome }}</span>
-                                <span>R$ {{ item.preco_unitario|floatformat:2 }}</span>
+                            <div class="ticket-item" style="flex-direction: column;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>{{ item.quantidade }}x {{ item.produto_nome }}</span>
+                                    <span>R$ {{ item.preco_unitario|floatformat:2 }}</span>
+                                </div>
+                                <span style="font-size: 0.8rem; color: #666; margin-top: 2px;">
+                                    Estoque atual: 
+                                    {% if item.produto %}
+                                        {% if item.produto.estoque == 0 %}
+                                            <strong style="color: #e63946;">Esgotado</strong>
+                                        {% else %}
+                                            {{ item.produto.estoque }}
+                                        {% endif %}
+                                    {% else %}
+                                        Excluído
+                                    {% endif %}
+                                </span>
                             </div>
                             {% endfor %}
                             

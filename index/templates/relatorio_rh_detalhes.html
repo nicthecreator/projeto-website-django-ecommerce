@@ -38,13 +38,20 @@
     {% regroup pedidos by data_pedido|date:"F Y" as pedidos_por_mes %}
 
     {% for mes_group in pedidos_por_mes %}
-    <div style="margin-bottom: 3rem;">
+    <div style="margin-bottom: 4rem;" class="mes-container">
         <h3 style="color: #1d3557; margin-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; text-transform: capitalize;">
             <i class="fa-solid fa-calendar-days"></i> {{ mes_group.grouper }}
         </h3>
         
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-            {% for pedido in mes_group.list %}
+        <div class="kanban-grid">
+            
+            <!-- Coluna: Pendentes -->
+            <div class="col-pendentes" style="display: flex; flex-direction: column; gap: 1.5rem; background-color: #fef9c3; padding: 1.5rem; border-radius: 8px; border: 1px solid #fef08a;">
+                <h4 style="color: #b45309; margin: 0 0 0.5rem 0; border-bottom: 2px solid #fde047; padding-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="fa-solid fa-clock"></i> Pendentes de Baixa</span>
+                </h4>
+                {% for pedido in mes_group.list %}
+                {% if not pedido.descontado_rh %}
             <div class="pedido-card" style="background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; overflow: hidden;">
                 <!-- Header do Pedido -->
                 <div style="background-color: #f8fafc; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0;">
@@ -69,12 +76,13 @@
                                 {% endif %}
                             </button>
                             
-                            <small class="responsavel-texto" style="font-size: 0.75rem; color: #64748b; {% if not pedido.descontado_rh %}display: none;{% endif %}">
-                                (Por: <span class="responsavel-nome">
+                            <small class="responsavel-texto" style="font-size: 0.75rem; color: #64748b; margin-top: 4px; text-align: right; {% if not pedido.descontado_rh %}display: none;{% endif %}">
+                                Baixa por: <span class="responsavel-nome">
                                     {% if pedido.responsavel_baixa %}
                                         {{ pedido.responsavel_baixa.first_name|default:pedido.responsavel_baixa.username }}
                                     {% endif %}
-                                </span>)
+                                </span>
+                                <br>ADS: <strong class="codigo-ads-texto" style="color: #475569;">{{ pedido.codigo_ads|default:"-" }}</strong>
                             </small>
                         </div>
                     </div>
@@ -108,8 +116,80 @@
                     </table>
                 </div>
             </div>
-            {% endfor %}
-        </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            
+            <!-- Coluna: Baixados -->
+            <div class="col-baixados" style="display: flex; flex-direction: column; gap: 1.5rem; background-color: #f0fdf4; padding: 1.5rem; border-radius: 8px; border: 1px solid #bbf7d0;">
+                <h4 style="color: #15803d; margin: 0 0 0.5rem 0; border-bottom: 2px solid #86efac; padding-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="fa-solid fa-check-double"></i> Já Baixados na Folha</span>
+                </h4>
+                {% for pedido in mes_group.list %}
+                {% if pedido.descontado_rh %}
+                <div class="pedido-card" style="background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; overflow: hidden;">
+                    <!-- Header do Pedido -->
+                    <div style="background-color: #f8fafc; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0;">
+                        <div>
+                            <strong style="color: #1e293b;">Pedido #{{ pedido.id }}</strong>
+                            <span style="color: #64748b; margin-left: 10px; font-size: 0.9rem;">
+                                <i class="fa-regular fa-calendar"></i> {{ pedido.data_pedido|date:"d/m/Y H:i" }}
+                            </span>
+                        </div>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <span style="font-weight: bold; color: #1e293b;">R$ {{ pedido.total|floatformat:2 }}</span>
+                            
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                                <button class="btn-baixa baixado" 
+                                        data-pedido="{{ pedido.id }}"
+                                        disabled
+                                        style="padding: 0.4rem 0.8rem; border: none; border-radius: 4px; cursor: not-allowed; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                    <i class="fa-solid fa-check"></i> Folha Baixada
+                                </button>
+                                
+                                <small class="responsavel-texto" style="font-size: 0.75rem; color: #64748b; margin-top: 4px; text-align: right;">
+                                    Baixa por: <span class="responsavel-nome">
+                                        {% if pedido.responsavel_baixa %}
+                                            {{ pedido.responsavel_baixa.first_name|default:pedido.responsavel_baixa.username }}
+                                        {% endif %}
+                                    </span>
+                                    <br>ADS: <strong class="codigo-ads-texto" style="color: #475569;">{{ pedido.codigo_ads|default:"-" }}</strong>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Itens do Pedido -->
+                    <div style="padding: 1rem 1.5rem;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+                            <thead>
+                                <tr style="color: #64748b; border-bottom: 1px solid #f1f5f9;">
+                                    <th style="padding-bottom: 0.5rem; font-weight: 500;">Produto</th>
+                                    <th style="padding-bottom: 0.5rem; font-weight: 500; text-align: center;">Qtd</th>
+                                    <th style="padding-bottom: 0.5rem; font-weight: 500; text-align: right;">Preço Un.</th>
+                                    <th style="padding-bottom: 0.5rem; font-weight: 500; text-align: right;">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in pedido.itens.all %}
+                                <tr style="border-bottom: 1px solid #f8fafc;">
+                                    <td style="padding: 0.8rem 0; color: #334155;">
+                                        <strong>{{ item.produto.nome }}</strong>
+                                        <br>
+                                        <small style="color: #94a3b8;"><i class="fa-solid fa-triangle-exclamation"></i> {{ item.produto.avaria }}</small>
+                                    </td>
+                                    <td style="padding: 0.8rem 0; text-align: center; color: #334155;">{{ item.quantidade }}x</td>
+                                    <td style="padding: 0.8rem 0; text-align: right; color: #334155;">R$ {{ item.preco_unitario|floatformat:2 }}</td>
+                                    <td style="padding: 0.8rem 0; text-align: right; color: #1e293b; font-weight: 500;">R$ {{ item.get_subtotal|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
     </div>
     {% empty %}
     <div style="background-color: white; padding: 3rem; text-align: center; border-radius: 8px; color: #64748b; border: 1px dashed #cbd5e1;">
@@ -126,7 +206,16 @@
             <i class="fa-solid fa-box-open"></i>
         </div>
         <h3 style="color: #1e293b; margin-bottom: 0.5rem; font-size: 1.25rem;">Confirmar Baixa?</h3>
-        <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 2rem;">Tem certeza que deseja dar baixa neste pedido na folha de pagamento? <strong>Esta ação não poderá ser desfeita.</strong></p>
+        <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 1rem;">Tem certeza que deseja dar baixa neste pedido na folha de pagamento? <strong>Esta ação não poderá ser desfeita.</strong></p>
+        
+        <div style="margin-bottom: 2rem; text-align: left;">
+            <label for="inputCodigoAds" style="display: block; color: #1e293b; font-size: 0.9rem; margin-bottom: 0.5rem; font-weight: 500;">Código ADS (Obrigatório)</label>
+            <input type="text" id="inputCodigoAds" maxlength="5" pattern="\d{5}" 
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                   placeholder="Ex: 12345"
+                   style="width: 100%; padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1.1rem; text-align: center; letter-spacing: 2px;">
+            <small style="color: #ef4444; font-size: 0.8rem; display: none;" id="erroCodigoAds">O código deve ter exatamente 5 dígitos.</small>
+        </div>
         
         <div style="display: flex; gap: 1rem; justify-content: center;">
             <button id="btnCancelConfirm" style="padding: 0.6rem 1.5rem; border: 1px solid #cbd5e1; background: white; color: #475569; border-radius: 6px; cursor: pointer; font-weight: 500; flex: 1; transition: background 0.2s;">
@@ -174,6 +263,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function fecharModal() {
         confirmModal.style.display = 'none';
+        document.getElementById('inputCodigoAds').value = '';
+        document.getElementById('erroCodigoAds').style.display = 'none';
         btnAtivo = null;
     }
 
@@ -181,6 +272,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnAccept.addEventListener('click', async () => {
         if (!btnAtivo) return;
+        
+        const codigoAdsInput = document.getElementById('inputCodigoAds');
+        const erroMsg = document.getElementById('erroCodigoAds');
+        const codigoAds = codigoAdsInput.value.trim();
+        
+        if (codigoAds.length !== 5) {
+            erroMsg.style.display = 'block';
+            codigoAdsInput.focus();
+            return;
+        }
         
         const pedidoId = btnAtivo.getAttribute('data-pedido');
         const originalHtml = btnAtivo.innerHTML;
@@ -199,7 +300,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken'),
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({ codigo_ads: codigoAds })
             });
             
             const data = await response.json();
@@ -210,13 +312,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     btnRef.innerHTML = '<i class="fa-solid fa-check"></i> Folha Baixada';
                     btnRef.disabled = true; // Impede clicar novamente
                     
-                    // Mostra o nome de quem deu baixa
+                    // Mostra o nome de quem deu baixa e o ADS
                     const containerPai = btnRef.closest('div');
                     const responsavelTexto = containerPai.querySelector('.responsavel-texto');
                     const responsavelNome = containerPai.querySelector('.responsavel-nome');
+                    const codigoAdsTexto = containerPai.querySelector('.codigo-ads-texto');
                     if (responsavelTexto && responsavelNome && data.responsavel) {
                         responsavelNome.textContent = data.responsavel;
+                        if (codigoAdsTexto && data.codigo_ads) {
+                            codigoAdsTexto.textContent = data.codigo_ads;
+                        }
                         responsavelTexto.style.display = 'block';
+                    }
+                    
+                    // Move the card to the "Baixados" column visually
+                    const cardElement = btnRef.closest('.pedido-card');
+                    const mesContainer = cardElement.closest('.mes-container');
+                    if (mesContainer) {
+                        const colBaixados = mesContainer.querySelector('.col-baixados');
+                        if (colBaixados) {
+                            // Fade out, move, fade in
+                            cardElement.style.opacity = '0';
+                            setTimeout(() => {
+                                colBaixados.appendChild(cardElement);
+                                cardElement.style.transition = 'opacity 0.3s ease-in-out';
+                                cardElement.style.opacity = '1';
+                            }, 300);
+                        }
                     }
                 }
             } else {

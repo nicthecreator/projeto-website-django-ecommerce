@@ -206,6 +206,10 @@
                             <div class="ticket-label">Comprador</div>
                             <div class="ticket-value">{{ pedido.usuario.first_name }}</div>
                         </div>
+                        <div class="ticket-info-row">
+                            <div class="ticket-label">Local de Retirada</div>
+                            <div class="ticket-value">{{ pedido.local_retirada }}</div>
+                        </div>
                         
                         <div class="ticket-items">
                             <div class="ticket-label" style="margin-bottom: 10px;">Itens do Pedido:</div>
@@ -241,8 +245,17 @@
                     </div>
 
                     <div class="ticket-footer">
-                        <strong>Apresente este voucher digital no local para retirar o(s) seu(s) produto(s).</strong><br>
+                        <strong>Apresente este voucher digital no local selecionado ({{ pedido.local_retirada }}) para retirar o(s) seu(s) produto(s).</strong><br>
                         <small>Este pedido foi aprovado e o valor será descontado conforme nossos Termos de Responsabilidade.</small>
+                        <hr style="margin: 15px 0; border: 0; border-top: 1px dashed #ccc;">
+                        <div style="text-align: left; font-size: 0.85rem; line-height: 1.4;">
+                            <strong style="color: #1d3557;">Próximos Passos:</strong><br>
+                            Após o pagamento, vá ao setor responsável pela lojinha ou entre em contato com:<br>
+                            <strong>Nome:</strong> Nicolas Gabriel - Auxiliar de TI<br>
+                            <strong>Telefone/WhatsApp:</strong> (61) 99983-1285<br>
+                            <strong>E-mail:</strong> nicolas.barbosa@grupophd.com<br>
+                            <strong>Ramal:</strong> 8429
+                        </div>
                     </div>
                 </div>
                 

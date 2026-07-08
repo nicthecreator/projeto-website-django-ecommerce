@@ -173,6 +173,7 @@ def checkout_view(request):
             data = json.loads(request.body)
             itens = data.get('itens', [])
             total = data.get('total', 0)
+            local_retirada = data.get('local_retirada', 'Brasília')
             
             if not itens:
                 return JsonResponse({'success': False, 'message': 'O carrinho está vazio.'}, status=400)
@@ -225,7 +226,8 @@ def checkout_view(request):
                 usuario=request.user,
                 total=total,
                 desconto_folha=True,
-                termo_aceito=True
+                termo_aceito=True,
+                local_retirada=local_retirada
             )
             
             # Cria os itens do pedido

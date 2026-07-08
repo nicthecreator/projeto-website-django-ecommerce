@@ -50,6 +50,11 @@ class Pedido(models.Model):
         ('Cancelado', 'Cancelado'),
     ]
 
+    LOCAL_CHOICES = [
+        ('Brasília', 'Brasília'),
+        ('Goiânia', 'Goiânia'),
+    ]
+
     usuario = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='pedidos')
     data_pedido = models.DateTimeField(auto_now_add=True)
     total = models.DecimalField(max_digits=10, decimal_places=2)
@@ -58,6 +63,7 @@ class Pedido(models.Model):
     responsavel_baixa = models.ForeignKey(AuthUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='baixas_realizadas')
     termo_aceito = models.BooleanField(default=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pendente')
+    local_retirada = models.CharField(max_length=20, choices=LOCAL_CHOICES, default='Brasília')
     data_retirada = models.DateTimeField(blank=True, null=True)
     responsavel_retirada = models.ForeignKey(AuthUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='retiradas_realizadas')
     codigo_ads = models.CharField(max_length=5, blank=True, null=True, help_text="Código ADS utilizado pelo RH durante a baixa.")

@@ -347,7 +347,14 @@
                             {% if p.status == 'Pendente' %}
                             <tr id="tr-pedido-{{ p.id }}" style="border-bottom: 1px solid #fef08a;">
                                 <td style="font-weight: bold; color: #b45309;">#{{ p.id }}<br><small style="color: #d97706; font-weight: normal;">{{ p.data_pedido|date:"d/m/Y H:i" }}</small></td>
-                                <td>{{ p.usuario.first_name }}</td>
+                                <td>
+                                    {{ p.usuario.first_name }}
+                                    <div style="margin-top: 5px;">
+                                        <span style="font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; {% if p.local_retirada == 'Goiânia' %}background-color: #fef3c7; color: #92400e;{% else %}background-color: #e0e7ff; color: #3730a3;{% endif %}">
+                                            <i class="fa-solid fa-location-dot"></i> {{ p.local_retirada }}
+                                        </span>
+                                    </div>
+                                </td>
                                 <td style="font-size: 0.85rem; color: #475569;">
                                     {% for item in p.itens.all %}
                                         <div>&bull; {{ item.quantidade }}x {{ item.produto_nome }}</div>
@@ -390,7 +397,14 @@
                             {% if p.status != 'Pendente' %}
                             <tr id="tr-pedido-{{ p.id }}" style="border-bottom: 1px solid #bbf7d0;">
                                 <td style="font-weight: bold; color: #15803d;">#{{ p.id }}<br><small style="color: #16a34a; font-weight: normal;">{{ p.data_pedido|date:"d/m/Y H:i" }}</small></td>
-                                <td>{{ p.usuario.first_name }}</td>
+                                <td>
+                                    {{ p.usuario.first_name }}
+                                    <div style="margin-top: 5px;">
+                                        <span style="font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; {% if p.local_retirada == 'Goiânia' %}background-color: #fef3c7; color: #92400e;{% else %}background-color: #e0e7ff; color: #3730a3;{% endif %}">
+                                            <i class="fa-solid fa-location-dot"></i> {{ p.local_retirada }}
+                                        </span>
+                                    </div>
+                                </td>
                                 <td style="font-size: 0.85rem; color: #475569;">
                                     {% for item in p.itens.all %}
                                         <div>&bull; {{ item.quantidade }}x {{ item.produto_nome }}</div>

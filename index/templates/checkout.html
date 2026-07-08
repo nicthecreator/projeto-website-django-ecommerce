@@ -125,6 +125,25 @@
             <strong><i class="fa-solid fa-money-check-dollar"></i> Forma de Pagamento:</strong> 
             Desconto Direto em Folha de Pagamento
         </div>
+        
+        <div class="location-box" style="background: #f3f4f6; border: 1px solid #d1d5db; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+            <strong style="display: block; margin-bottom: 1rem; color: #1f2937; font-size: 1.1rem;"><i class="fa-solid fa-location-dot"></i> Escolha o Local de Retirada:</strong>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="radio" name="local_retirada" value="Brasília" style="width: 18px; height: 18px;">
+                    <span style="font-size: 1rem; color: #374151;">Sede - Brasília (DF)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="radio" name="local_retirada" value="Goiânia" style="width: 18px; height: 18px;">
+                    <span style="font-size: 1rem; color: #374151;">Filial - Goiânia (GO)</span>
+                </label>
+            </div>
+            
+            <div id="location-message" style="display: none; padding: 10px; border-radius: 6px; font-size: 0.95rem; font-weight: 500;">
+                <!-- Mensagem dinâmica aparecerá aqui -->
+            </div>
+        </div>
 
         <div class="terms-box">
             <p>
@@ -206,8 +225,38 @@
             `;
             container.innerHTML = html;
 
-            checkboxTermos.addEventListener('change', (e) => {
-                btnFinalizar.disabled = !e.target.checked;
+            let isLocationSelected = false;
+            let selectedLocationValue = '';
+            
+            const locationRadios = document.querySelectorAll('input[name="local_retirada"]');
+            const locationMessage = document.getElementById('location-message');
+            
+            function checkReadyState() {
+                btnFinalizar.disabled = !(checkboxTermos.checked && isLocationSelected);
+            }
+
+            locationRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    isLocationSelected = true;
+                    selectedLocationValue = e.target.value;
+                    
+                    locationMessage.style.display = 'block';
+                    if (selectedLocationValue === 'Brasília') {
+                        locationMessage.style.backgroundColor = '#d1fae5';
+                        locationMessage.style.color = '#065f46';
+                        locationMessage.innerHTML = '<i class="fa-regular fa-clock"></i> Você poderá retirar o pedido após 2 horas da confirmação.';
+                    } else if (selectedLocationValue === 'Goiânia') {
+                        locationMessage.style.backgroundColor = '#fef3c7';
+                        locationMessage.style.color = '#92400e';
+                        locationMessage.innerHTML = '<i class="fa-solid fa-truck-fast"></i> O produto terá um prazo de até 7 dias para chegada na filial.';
+                    }
+                    
+                    checkReadyState();
+                });
+            });
+
+            checkboxTermos.addEventListener('change', () => {
+                checkReadyState();
             });
 
             const modal = document.getElementById('checkoutConfirmModal');
@@ -238,7 +287,8 @@
                         },
                         body: JSON.stringify({
                             itens: carrinho,
-                            total: total
+                            total: total,
+                            local_retirada: selectedLocationValue
                         })
                     });
 

@@ -409,6 +409,22 @@ def dar_baixa_pedido(request, pedido_id):
             
     return JsonResponse({'success': False, 'message': 'Método inválido'}, status=405)
 
+@login_required(login_url='login')
+def imprimir_guia_view(request, pedido_id):
+    if not request.user.is_staff:
+        messages.error(request, 'Não autorizado')
+        return redirect('index')
+        
+    try:
+        pedido = Pedido.objects.select_related('usuario', 'usuario__profile').prefetch_related('itens', 'itens__produto').get(id=pedido_id)
+        
+        # Só permite imprimir guia para Goiânia, mas não vamos travar o código. 
+        # A lógica no template ou no botão vai garantir isso, aqui apenas enviamos os dados.
+        return render(request, 'guia_remessa.html', {'pedido': pedido})
+    except Pedido.DoesNotExist:
+        messages.error(request, 'Pedido não encontrado')
+        return redirect('painel_admin')
+
 from django.db.models import Q, F
 from django.db.models.functions import TruncMonth
 from datetime import datetime

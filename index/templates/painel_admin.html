@@ -366,7 +366,14 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <button id="btn-baixa-{{ p.id }}" onclick="darBaixa({{ p.id }})" class="btn-action btn-success">Dar Baixa</button>
+                                    <div style="display: flex; gap: 5px; flex-direction: column;">
+                                        <button id="btn-baixa-{{ p.id }}" onclick="darBaixa({{ p.id }})" class="btn-action btn-success">Dar Baixa</button>
+                                        {% if p.local_retirada == 'Goiânia' %}
+                                        <a href="{% url 'imprimir_guia' p.id %}" target="_blank" class="btn-action" style="background-color: #f59e0b; color: white; text-align: center; font-size: 0.85rem;">
+                                            <i class="fa-solid fa-print"></i> Guia
+                                        </a>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                             {% endif %}

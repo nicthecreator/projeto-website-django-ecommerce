@@ -393,7 +393,7 @@ def dar_baixa_pedido(request, pedido_id):
     if request.method == 'POST':
         try:
             pedido = Pedido.objects.get(id=pedido_id)
-            if pedido.status == 'Pendente':
+            if pedido.status in ['Pendente', 'Enviado', 'Pronto']:
                 pedido.status = 'Retirado'
                 pedido.data_retirada = timezone.now()
                 pedido.responsavel_retirada = request.user

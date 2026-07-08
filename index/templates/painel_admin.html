@@ -167,10 +167,10 @@
             font-size: 0.85rem;
             font-weight: bold;
         }
-        .status-pendente { background: #fef08a; color: #854d0e; }
-        .status-enviado { background: #bfdbfe; color: #1e3a8a; }
-        .status-pronto { background: #fbcfe8; color: #831843; }
-        .status-retirado { background: #bbf7d0; color: #166534; }
+        .status-pendente { background: #fef08a; color: #854d0e; text-shadow: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .status-enviado { background: #bfdbfe; color: #1e3a8a; text-shadow: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .status-pronto { background: #fbcfe8; color: #831843; text-shadow: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .status-retirado { background: #bbf7d0; color: #166534; text-shadow: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 
         /* Responsividade para Celulares */
         @media (max-width: 768px) {
@@ -705,34 +705,77 @@
         }
     }
 
+    let pedidoIdParaStatus = null;
+    let novoStatusParaAplicar = null;
+
     function avancarStatus(id, novoStatus) {
-        if(confirm(`Tem certeza que deseja marcar este pedido como '${novoStatus}'?`)) {
-            fetch(`/avancar-status-pedido/${id}/${novoStatus}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken')
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) {
-                    location.reload();
-                } else {
-                    alert('Erro ao atualizar status: ' + data.message);
-                }
-            });
+        pedidoIdParaStatus = id;
+        novoStatusParaAplicar = novoStatus;
+        
+        const modal = document.getElementById('statusModalAdmin');
+        const modalTitle = document.getElementById('statusModalTitle');
+        const modalDesc = document.getElementById('statusModalDesc');
+        const modalIcon = document.getElementById('statusModalIcon');
+        
+        if (novoStatus === 'Enviado') {
+            modalTitle.textContent = 'Marcar como Enviado?';
+            modalDesc.textContent = 'Este pacote já está no caminhão indo para Goiânia?';
+            modalIcon.innerHTML = '<i class="fa-solid fa-truck-fast"></i>';
+            modalIcon.style.backgroundColor = '#3b82f6';
+        } else if (novoStatus === 'Pronto') {
+            modalTitle.textContent = 'Confirmar Chegada?';
+            modalDesc.textContent = 'Este pacote já chegou na filial e está pronto para o funcionário buscar?';
+            modalIcon.innerHTML = '<i class="fa-solid fa-store"></i>';
+            modalIcon.style.backgroundColor = '#f97316';
         }
-    }
-
-    let pedidoIdParaBaixa = null;
-
-    function darBaixa(id) {
-        pedidoIdParaBaixa = id;
-        const confirmModalAdmin = document.getElementById('confirmModalAdmin');
-        if (confirmModalAdmin) confirmModalAdmin.style.display = 'flex';
+        
+        if (modal) modal.style.display = 'flex';
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        const statusModalAdmin = document.getElementById('statusModalAdmin');
+        const btnCancelStatus = document.getElementById('btnCancelStatus');
+        const btnAcceptStatus = document.getElementById('btnAcceptStatus');
+        
+        if(btnCancelStatus) {
+            btnCancelStatus.addEventListener('click', () => {
+                if (statusModalAdmin) statusModalAdmin.style.display = 'none';
+                pedidoIdParaStatus = null;
+                novoStatusParaAplicar = null;
+            });
+        }
+        
+        if(btnAcceptStatus) {
+            btnAcceptStatus.addEventListener('click', () => {
+                if(!pedidoIdParaStatus || !novoStatusParaAplicar) return;
+                
+                const id = pedidoIdParaStatus;
+                const novoStatus = novoStatusParaAplicar;
+                
+                btnAcceptStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                btnAcceptStatus.disabled = true;
+
+                fetch(`/avancar-status-pedido/${id}/${novoStatus}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        location.reload();
+                    } else {
+                        alert('Erro ao atualizar status: ' + data.message);
+                        btnAcceptStatus.innerHTML = 'Confirmar';
+                        btnAcceptStatus.disabled = false;
+                        if (statusModalAdmin) statusModalAdmin.style.display = 'none';
+                    }
+                });
+            });
+        }
+        
+        // Modal nativo de baixa
         const confirmModalAdmin = document.getElementById('confirmModalAdmin');
         const btnCancelAdmin = document.getElementById('btnCancelAdmin');
         const btnAcceptAdmin = document.getElementById('btnAcceptAdmin');

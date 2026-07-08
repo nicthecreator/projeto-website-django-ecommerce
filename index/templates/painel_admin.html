@@ -706,6 +706,15 @@
             });
         }
     }
+    
+    let pedidoIdParaBaixa = null;
+    
+    // Tornar darBaixa global para ser chamada pelo HTML
+    window.darBaixa = function(id) {
+        pedidoIdParaBaixa = id;
+        const confirmModalAdmin = document.getElementById('confirmModalAdmin');
+        if (confirmModalAdmin) confirmModalAdmin.style.display = 'flex';
+    };
 
     let pedidoIdParaStatus = null;
     let novoStatusParaAplicar = null;

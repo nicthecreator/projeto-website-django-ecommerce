@@ -410,6 +410,29 @@ def dar_baixa_pedido(request, pedido_id):
     return JsonResponse({'success': False, 'message': 'Método inválido'}, status=405)
 
 @login_required(login_url='login')
+def avancar_status_pedido(request, pedido_id, novo_status):
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'message': 'Não autorizado'}, status=403)
+        
+    if request.method == 'POST':
+        try:
+            pedido = Pedido.objects.get(id=pedido_id)
+            
+            # Validação simples do status
+            status_validos = ['Enviado', 'Pronto']
+            if novo_status not in status_validos:
+                return JsonResponse({'success': False, 'message': 'Status inválido'}, status=400)
+                
+            pedido.status = novo_status
+            pedido.save()
+            
+            return JsonResponse({'success': True, 'novo_status': novo_status})
+        except Pedido.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Pedido não encontrado'}, status=404)
+            
+    return JsonResponse({'success': False, 'message': 'Método inválido'}, status=405)
+
+@login_required(login_url='login')
 def imprimir_guia_view(request, pedido_id):
     if not request.user.is_staff:
         messages.error(request, 'Não autorizado')

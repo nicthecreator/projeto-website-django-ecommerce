@@ -45,7 +45,9 @@ class Produto(models.Model):
 
 class Pedido(models.Model):
     STATUS_CHOICES = [
-        ('Pendente', 'Pendente (Aguardando Retirada)'),
+        ('Pendente', 'Pendente (Em preparo)'),
+        ('Enviado', 'Enviado para Filial'),
+        ('Pronto', 'Pronto para Retirada'),
         ('Retirado', 'Retirado (Finalizado)'),
         ('Cancelado', 'Cancelado'),
     ]

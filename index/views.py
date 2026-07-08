@@ -262,8 +262,8 @@ def comprovante_view(request, pedido_id):
 
 @login_required(login_url='login')
 def minhas_compras_view(request):
-    # Busca os pedidos do usuário, do mais recente para o mais antigo
-    pedidos = Pedido.objects.filter(usuario=request.user).order_by('-data_pedido')
+    # Busca os pedidos do usuário, otimizando o carregamento dos itens (N+1 Query Fix)
+    pedidos = Pedido.objects.filter(usuario=request.user).order_by('-data_pedido').prefetch_related('itens', 'itens__produto')
     return render(request, 'minhas_compras.html', {'pedidos': pedidos})
 
 from django.utils import timezone
@@ -276,7 +276,8 @@ def painel_admin_view(request):
         return redirect('index')
     
     produtos = Produto.objects.all().order_by('-id')
-    pedidos = Pedido.objects.all().order_by('-data_pedido')
+    # Prevenção de N+1 garantindo carregamento instantâneo
+    pedidos = Pedido.objects.select_related('usuario', 'usuario__profile', 'responsavel_baixa', 'responsavel_retirada').prefetch_related('itens', 'itens__produto').all().order_by('-data_pedido')
     
     return render(request, 'painel_admin.html', {'produtos': produtos, 'pedidos': pedidos})
 
@@ -299,8 +300,8 @@ def adicionar_produto(request):
         if imagem_cropped_base64:
             try:
                 format, imgstr = imagem_cropped_base64.split(';base64,') 
-                ext = format.split('/')[-1] 
-                filename = f"crop_{uuid.uuid4()}.{ext}"
+                # Blindagem de segurança: forçar JPG (ignora o tipo enviado)
+                filename = f"crop_{uuid.uuid4()}.jpg"
                 imagem_produto = ContentFile(base64.b64decode(imgstr), name=filename)
             except Exception:
                 pass
@@ -350,8 +351,8 @@ def editar_produto(request, produto_id):
             if imagem_cropped_base64:
                 try:
                     format, imgstr = imagem_cropped_base64.split(';base64,') 
-                    ext = format.split('/')[-1] 
-                    filename = f"crop_{uuid.uuid4()}.{ext}"
+                    # Blindagem de segurança: forçar JPG
+                    filename = f"crop_{uuid.uuid4()}.jpg"
                     produto.imagem_produto = ContentFile(base64.b64decode(imgstr), name=filename)
                 except Exception:
                     pass

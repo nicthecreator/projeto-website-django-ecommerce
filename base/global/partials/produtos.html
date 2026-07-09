@@ -16,7 +16,7 @@
                     <span class="new-price">R$ {{ produto.preco_desconto|floatformat:2 }}</span>
                 </div>
                 <p style="font-size: 0.8rem; color: #64748b; margin-top: 5px; margin-bottom: 5px; text-align: center;">
-                    <i class="fa-solid fa-circle-info"></i> Limite: <strong>{{ produto.limite_por_funcionario }} un</strong> a cada 24h
+                    <i class="fa-solid fa-circle-info"></i> Limite de unidade: <strong>{{ produto.limite_por_funcionario }} un</strong>
                 </p>
                 <p style="font-size: 0.9rem; margin-bottom: 10px; text-align: center; font-weight: bold;">
                     {% if produto.estoque > 0 %}

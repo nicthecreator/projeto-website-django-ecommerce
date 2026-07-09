@@ -150,9 +150,8 @@ def verificar_limite_view(request):
             compras_ativas = ItemPedido.objects.filter(
                 pedido__usuario=request.user,
                 produto=produto,
-                pedido__descontado_rh=False,
-                pedido__status__in=['Pendente', 'Retirado']
-            ).aggregate(Total=Sum('quantidade'))['Total'] or 0
+                pedido__descontado_rh=False
+            ).exclude(pedido__status='Cancelado').aggregate(Total=Sum('quantidade'))['Total'] or 0
             
             if (compras_ativas + qtd_solicitada) > produto.limite_por_funcionario:
                 return JsonResponse({
@@ -198,9 +197,8 @@ def checkout_view(request):
                 compras_ativas = ItemPedido.objects.filter(
                     pedido__usuario=request.user,
                     produto=produto,
-                    pedido__descontado_rh=False,
-                    pedido__status__in=['Pendente', 'Retirado']
-                ).aggregate(Total=Sum('quantidade'))['Total'] or 0
+                    pedido__descontado_rh=False
+                ).exclude(pedido__status='Cancelado').aggregate(Total=Sum('quantidade'))['Total'] or 0
                 
                 if (compras_ativas + qtd_solicitada) > produto.limite_por_funcionario:
                     return JsonResponse({

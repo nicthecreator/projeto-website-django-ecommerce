@@ -73,5 +73,16 @@ existe o Grupo PHD</h2>
     </div>
 
     <script src="{% static 'js/login.js' %}"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function() {
+            var btn = this.querySelector('.btn-entrar');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Autenticando...';
+            btn.style.opacity = '0.8';
+            btn.style.cursor = 'not-allowed';
+            setTimeout(function() {
+                btn.disabled = true;
+            }, 10);
+        });
+    </script>
 </body>
 </html>

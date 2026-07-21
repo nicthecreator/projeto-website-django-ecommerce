@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # PHD Store - E-commerce Web Application
 
 ![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)
@@ -212,4 +211,3 @@ como parte dos estudos práticos em Engenharia de Software e Desenvolvimento de 
 
 ---
 *Brasília, 2026*
->>>>>>> 4deb62c (Adicionar estrutura inicial do projeto e dependências)

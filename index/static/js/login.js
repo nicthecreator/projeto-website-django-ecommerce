@@ -64,5 +64,13 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
 
         const h1 = document.querySelector('.login-box h1');
         h1.insertAdjacentElement('afterend', divErro);
+
+        const btn = document.querySelector('.btn-entrar');
+        if (btn) {
+            btn.innerHTML = 'Entrar';
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            btn.disabled = false;
+        }
     });
 });

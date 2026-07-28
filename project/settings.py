@@ -26,13 +26,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Lendo o arquivo .env
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY', default='django-insecure-(g-^o$y^c!r+h8p+w9_p^e&q74b1x9r0u=l830)q5z9o-h(m(x')
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG', default=False)
+DEBUG = env.bool('DEBUG', default=False)
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.onrender.com', '10.1.30.100', '*'])
+# SECURITY WARNING: keep the secret key used in production secret!
+if DEBUG:
+    SECRET_KEY = env('SECRET_KEY', default='django-insecure-(g-^o$y^c!r+h8p+w9_p^e&q74b1x9r0u=l830)q5z9o-h(m(x')
+else:
+    SECRET_KEY = env('SECRET_KEY')
+
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['127.0.0.1', 'localhost'] if DEBUG else [])
 
 # Configurações de Segurança para Produção
 SECURE_SSL_REDIRECT = not DEBUG

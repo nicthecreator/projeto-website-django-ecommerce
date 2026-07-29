@@ -229,18 +229,20 @@
         {% endfor %}
     {% endif %}
 
-    <div class="admin-tabs">
-        <button class="tab-btn active" onclick="showTab('produtos')">Gerenciar Produtos</button>
-        <button class="tab-btn" onclick="showTab('pedidos')">Pedidos (Retiradas)</button>
-    </div>
-
-    <!-- ABA PRODUTOS -->
-    <div id="produtos" class="tab-content active">
-        <div style="text-align: right; margin-bottom: 15px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div class="admin-tabs" style="margin-bottom: 0;">
+            <button class="tab-btn active" onclick="showTab('produtos')">Gerenciar Produtos</button>
+            <button class="tab-btn" onclick="showTab('pedidos')">Pedidos (Retiradas)</button>
+        </div>
+        <div>
             <a href="{% url 'importar_produtos_excel' %}" class="btn-action" style="background-color: #217346; color: white;">
                 <i class="fa-solid fa-file-excel"></i> Importar Produtos (Excel)
             </a>
         </div>
+    </div>
+
+    <!-- ABA PRODUTOS -->
+    <div id="produtos" class="tab-content active">
 
         <div class="add-product-card">
             <h3>Adicionar Novo Produto Manualmente</h3>

@@ -1,47 +1,184 @@
 {% extends "global/base.html" %}
 {% load static %}
 
+{% block title %}Importar Produtos - PHD Store{% endblock %}
+
+{% block extra_head %}
+<style>
+    .import-container {
+        max-width: 800px;
+        margin: 3rem auto;
+        padding: 0 1.5rem;
+        font-family: 'Inter', sans-serif;
+    }
+    .import-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .import-header h2 {
+        color: #1d3557;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+    }
+    .import-header p {
+        color: #64748b;
+        font-size: 1.1rem;
+    }
+    .instructions-card {
+        background: #f8fafc;
+        border-left: 4px solid #3b82f6;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .instructions-card h4 {
+        color: #1e293b;
+        margin-top: 0;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .column-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.8rem;
+    }
+    .column-list li {
+        background: white;
+        padding: 0.8rem 1rem;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        font-size: 0.9rem;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .column-list li strong {
+        color: #0f172a;
+        background: #e2e8f0;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+    .upload-card {
+        background: white;
+        padding: 2.5rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    .file-drop-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 2rem;
+        background: #f8fafc;
+        transition: all 0.2s ease;
+        margin-bottom: 1.5rem;
+    }
+    .file-drop-area:hover {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+    .file-icon {
+        font-size: 3rem;
+        color: #94a3b8;
+        margin-bottom: 1rem;
+    }
+    .btn-import {
+        background: #217346;
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        justify-content: center;
+    }
+    .btn-import:hover {
+        background: #185c37;
+    }
+    .btn-back {
+        display: inline-block;
+        margin-top: 1.5rem;
+        color: #64748b;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+    .btn-back:hover {
+        color: #0f172a;
+    }
+    @media (max-width: 600px) {
+        .column-list { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <h2>Importar Produtos via Excel</h2>
-    <p>Selecione uma planilha <strong>.xlsx</strong> contendo os produtos. O arquivo não deve ter cabeçalho (a primeira linha já deve ser o primeiro produto). A ordem das colunas deve ser exatamente:</p>
-    <ul>
-        <li><strong>Coluna A:</strong> Nome do Produto</li>
-        <li><strong>Coluna B:</strong> Estoque / Quantidade (Ex: "7 CAIXAS" ou "7")</li>
-        <li><strong>Coluna C:</strong> Validade (Ex: "06/10/2025")</li>
-        <li><strong>Coluna D:</strong> Preço Original (Ex: "10,50")</li>
-        <li><strong>Coluna E:</strong> Preço com Desconto (Ex: "5,00")</li>
-        <li><strong>Coluna F:</strong> Avaria / Motivo do Desconto</li>
-        <li><strong>Coluna G:</strong> Limite por Funcionário (Ex: "1" ou "2")</li>
-    </ul>
+<div class="import-container">
+    <div class="import-header">
+        <h2><i class="fa-solid fa-file-excel" style="color: #217346;"></i> Importar Produtos</h2>
+        <p>Cadastre vários produtos de uma só vez usando uma planilha .xlsx</p>
+    </div>
 
     {% if messages %}
         {% for message in messages %}
-            <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+            <div style="padding: 1rem; margin-bottom: 1.5rem; border-radius: 8px; text-align: center; font-weight: bold; background-color: {% if message.tags == 'error' %}#fee2e2; color: #dc2626{% else %}#dcfce7; color: #16a34a{% endif %}; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                 {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {% endfor %}
     {% endif %}
 
-    <div class="card p-4 mt-4 shadow-sm">
+    <div class="instructions-card">
+        <h4><i class="fa-solid fa-circle-info" style="color: #3b82f6;"></i> Estrutura da Planilha</h4>
+        <p style="font-size: 0.95rem; color: #475569; margin-bottom: 1rem;">O arquivo <strong>não deve ter cabeçalho</strong> (a primeira linha já é o primeiro produto). A ordem exata deve ser:</p>
+        <ul class="column-list">
+            <li><strong>A</strong> Nome do Produto</li>
+            <li><strong>B</strong> Estoque (Ex: "7")</li>
+            <li><strong>C</strong> Validade (Ex: "06/10/2025")</li>
+            <li><strong>D</strong> Preço Original (Ex: "10,50")</li>
+            <li><strong>E</strong> Preço Desconto (Ex: "5,00")</li>
+            <li><strong>F</strong> Avaria / Motivo</li>
+            <li><strong>G</strong> Limite por Func. (Ex: "1")</li>
+        </ul>
+    </div>
+
+    <div class="upload-card">
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            <div class="mb-3">
-                <label for="{{ form.arquivo_excel.id_for_label }}" class="form-label">{{ form.arquivo_excel.label }}</label>
-                {{ form.arquivo_excel }}
-                {% if form.arquivo_excel.help_text %}
-                    <div class="form-text">{{ form.arquivo_excel.help_text }}</div>
-                {% endif %}
-                {% if form.arquivo_excel.errors %}
-                    <div class="text-danger">
-                        {{ form.arquivo_excel.errors }}
-                    </div>
-                {% endif %}
+            <div class="file-drop-area">
+                <i class="fa-solid fa-cloud-arrow-up file-icon"></i>
+                <h5 style="color: #1e293b; margin-bottom: 0.5rem; font-weight: 700;">Selecione sua planilha</h5>
+                <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1rem;">Apenas arquivos Excel (.xlsx) são permitidos.</p>
+                <div style="margin: 0 auto; width: fit-content; text-align: left;">
+                    {{ form.arquivo_excel }}
+                </div>
             </div>
             
-            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-upload"></i> Importar</button>
-            <a href="{% url 'painel_admin' %}" class="btn btn-secondary ms-2">Voltar ao Painel</a>
+            {% if form.arquivo_excel.errors %}
+                <div style="color: #dc2626; margin-bottom: 1rem; font-weight: bold; background: #fee2e2; padding: 0.5rem; border-radius: 4px;">
+                    {{ form.arquivo_excel.errors }}
+                </div>
+            {% endif %}
+            
+            <button type="submit" class="btn-import">
+                <i class="fa-solid fa-check"></i> Iniciar Importação
+            </button>
+            <a href="{% url 'painel_admin' %}" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Voltar ao Painel Administrativo</a>
         </form>
     </div>
 </div>

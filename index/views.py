@@ -575,3 +575,100 @@ def dar_baixa_rh_view(request, pedido_id):
             return JsonResponse({'success': False, 'message': 'Pedido não encontrado'}, status=404)
             
     return JsonResponse({'success': False, 'message': 'Método inválido'}, status=405)
+
+import openpyxl
+from .forms import UploadExcelForm
+
+@login_required(login_url='login')
+def importar_produtos_excel(request):
+    if not request.user.is_staff:
+        messages.error(request, 'Não autorizado')
+        return redirect('index')
+
+    if request.method == 'POST':
+        form = UploadExcelForm(request.POST, request.FILES)
+        if form.is_valid():
+            arquivo = request.FILES['arquivo_excel']
+            try:
+                wb = openpyxl.load_workbook(arquivo)
+                sheet = wb.active
+                
+                count_sucesso = 0
+                count_erros = 0
+
+                for row in sheet.iter_rows(values_only=True):
+                    # Checar se a linha está vazia
+                    if not any(row):
+                        continue
+                        
+                    try:
+                        nome = str(row[0]).strip() if row[0] else ''
+                        estoque_str = str(row[1]) if row[1] else '0'
+                        validade_val = row[2] if len(row) > 2 else None
+                        preco_orig = row[3] if len(row) > 3 else 0.0
+                        preco_desc = row[4] if len(row) > 4 else 0.0
+                        avaria = str(row[5]).strip() if len(row) > 5 and row[5] else ''
+                        limite = row[6] if len(row) > 6 and row[6] else 1
+                        
+                        if not nome:
+                            count_erros += 1
+                            continue
+                            
+                        # Extrair números de estoque (e.g. "7 CAIXAS" -> 7)
+                        estoque_nums = re.findall(r'\d+', estoque_str)
+                        estoque = int(estoque_nums[0]) if estoque_nums else 0
+                        
+                        # Processar precos
+                        try:
+                            preco_orig_float = float(str(preco_orig).replace(',', '.')) if preco_orig else 0.0
+                        except ValueError:
+                            preco_orig_float = 0.0
+                            
+                        try:
+                            preco_desc_float = float(str(preco_desc).replace(',', '.')) if preco_desc else 0.0
+                        except ValueError:
+                            preco_desc_float = 0.0
+                            
+                        # Limite
+                        try:
+                            limite_int = int(limite)
+                        except (ValueError, TypeError):
+                            limite_int = 1
+                            
+                        # Validade (openpyxl might return datetime object or string)
+                        validade_date = None
+                        if isinstance(validade_val, datetime):
+                            validade_date = validade_val.date()
+                        elif validade_val:
+                            try:
+                                # Try parsing DD/MM/YYYY
+                                validade_date = datetime.strptime(str(validade_val).strip(), "%d/%m/%Y").date()
+                            except ValueError:
+                                pass
+                                
+                        Produto.objects.create(
+                            nome=nome,
+                            estoque=estoque,
+                            validade=validade_date,
+                            preco_original=preco_orig_float,
+                            preco_desconto=preco_desc_float,
+                            avaria=avaria,
+                            limite_por_funcionario=limite_int
+                        )
+                        count_sucesso += 1
+
+                    except Exception as e:
+                        count_erros += 1
+                        
+                messages.success(request, f'Importação concluída: {count_sucesso} produtos adicionados. ({count_erros} linhas ignoradas/com erro)')
+                return redirect('painel_admin')
+
+            except Exception as e:
+                messages.error(request, f'Erro ao ler o arquivo Excel: {str(e)}')
+        else:
+            messages.error(request, 'O arquivo enviado é inválido.')
+
+    else:
+        form = UploadExcelForm()
+
+    return render(request, 'importar_produtos.html', {'form': form})

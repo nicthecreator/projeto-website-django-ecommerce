@@ -21,4 +21,5 @@ urlpatterns = [
     path('dar-baixa-pedido/<int:pedido_id>/', views.dar_baixa_pedido, name='dar_baixa_pedido'),
     path('avancar-status-pedido/<int:pedido_id>/<str:novo_status>/', views.avancar_status_pedido, name='avancar_status_pedido'),
     path('imprimir-guia/<int:pedido_id>/', views.imprimir_guia_view, name='imprimir_guia'),
+    path('importar-produtos-excel/', views.importar_produtos_excel, name='importar_produtos_excel'),
 ]

@@ -236,8 +236,14 @@
 
     <!-- ABA PRODUTOS -->
     <div id="produtos" class="tab-content active">
+        <div style="text-align: right; margin-bottom: 15px;">
+            <a href="{% url 'importar_produtos_excel' %}" class="btn-action" style="background-color: #217346; color: white;">
+                <i class="fa-solid fa-file-excel"></i> Importar Produtos (Excel)
+            </a>
+        </div>
+
         <div class="add-product-card">
-            <h3>Adicionar Novo Produto</h3>
+            <h3>Adicionar Novo Produto Manualmente</h3>
             <form action="{% url 'adicionar_produto' %}" method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="form-grid">
@@ -262,7 +268,7 @@
                         <input type="number" name="estoque" required>
                     </div>
                     <div class="form-group">
-                        <label>Limite por Funcionário (Até Baixa do RH)</label>
+                        <label>Limite por Funcionário</label>
                         <input type="number" name="limite_por_funcionario" value="1" min="1" required>
                     </div>
                     <div class="form-group">

@@ -38,6 +38,7 @@ class Produto(models.Model):
     estoque = models.PositiveIntegerField(default=0)
     limite_por_funcionario = models.PositiveIntegerField(default=1, help_text="Limite de compras por funcionário por ciclo de folha (até o RH dar baixa).")
     imagem_produto = models.ImageField(upload_to='produtos/', blank=True, null=True)
+    validade = models.DateField(null=True, blank=True)
     data_cadastro = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

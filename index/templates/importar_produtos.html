@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Importar Produtos via Excel</h2>
+    <p>Selecione uma planilha <strong>.xlsx</strong> contendo os produtos. O arquivo não deve ter cabeçalho (a primeira linha já deve ser o primeiro produto). A ordem das colunas deve ser exatamente:</p>
+    <ul>
+        <li><strong>Coluna A:</strong> Nome do Produto</li>
+        <li><strong>Coluna B:</strong> Estoque / Quantidade (Ex: "7 CAIXAS" ou "7")</li>
+        <li><strong>Coluna C:</strong> Validade (Ex: "06/10/2025")</li>
+        <li><strong>Coluna D:</strong> Preço Original (Ex: "10,50")</li>
+        <li><strong>Coluna E:</strong> Preço com Desconto (Ex: "5,00")</li>
+        <li><strong>Coluna F:</strong> Avaria / Motivo do Desconto</li>
+        <li><strong>Coluna G:</strong> Limite por Funcionário (Ex: "1" ou "2")</li>
+    </ul>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card p-4 mt-4 shadow-sm">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="{{ form.arquivo_excel.id_for_label }}" class="form-label">{{ form.arquivo_excel.label }}</label>
+                {{ form.arquivo_excel }}
+                {% if form.arquivo_excel.help_text %}
+                    <div class="form-text">{{ form.arquivo_excel.help_text }}</div>
+                {% endif %}
+                {% if form.arquivo_excel.errors %}
+                    <div class="text-danger">
+                        {{ form.arquivo_excel.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-upload"></i> Importar</button>
+            <a href="{% url 'painel_admin' %}" class="btn btn-secondary ms-2">Voltar ao Painel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

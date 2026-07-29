@@ -7,12 +7,7 @@ import json # Importação para lidar com dados JSON enviados via AJAX
 from django.contrib.auth import logout # Importação para logout
 from django.contrib.auth.decorators import login_required # Importação para proteger a view de perfil
 import re # Importação para expressões regulares (validação de e-mail)
-import random # Importação para geração de código aleatório
-from django.core.mail import send_mail # Importação para envio de e-mails
-from django.contrib.auth.tokens import default_token_generator # Importação para geração de tokens seguros (usado em recuperação de senha)
-from django.utils.http import urlsafe_base64_encode # Importação para codificar o ID do usuário em base64 para inclusão em URLs
-from django.utils.encoding import force_bytes # Importação para converter dados em bytes (necessário para codificação base64)
-from django.utils.http import urlsafe_base64_decode # Importação para decodificar o ID do usuário a partir da URL
+
 from django.utils.encoding import force_str # Importação para converter bytes de volta para string (necessário após decodificação base64
 import base64
 from django.core.files.base import ContentFile

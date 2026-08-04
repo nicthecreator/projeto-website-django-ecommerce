@@ -113,4 +113,5 @@ O Django utilizará automaticamente o **dj-database-url** para converter a URL d
 
 ## 👥 👨‍💻 Autor
 Desenvolvido por **Nicolas Gabriel Barbosa de Ursino**
+
 *Brasília, 2026*

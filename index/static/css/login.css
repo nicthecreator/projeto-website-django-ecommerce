@@ -34,13 +34,14 @@ body {
 .login-box h1 {
     font-size: 2rem;
     color: #1a1a1a;
-    margin-bottom: 2rem;
+    margin-bottom: 0.2rem; /* Margem reduzida para juntar com o subtítulo */
 }
 
 .login-subtitle {
     font-size: 1.1rem;
     color: #777;
     font-weight: 400;
+    margin-bottom: 2rem; /* A margem grande passou para o subtítulo */
 }
 
 .input-group {
@@ -209,6 +210,7 @@ body {
     }
     .login-logo-mobile {
         display: block;
+        margin: 3rem 3rem 1rem 3.8rem;
     }
     /* Retorna o alinhamento do texto dos labels e links para esquerda, já que a section foi centralizada */
     .input-group label, .options {

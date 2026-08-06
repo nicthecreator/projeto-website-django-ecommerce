@@ -210,7 +210,9 @@ body {
     }
     .login-logo-mobile {
         display: block;
-        margin: 3rem 3rem 1rem 3.8rem;
+        max-width: 280px; /* Aumentei um pouco a imagem (antes era 250px) */
+        margin: 3rem auto 1rem auto;
+        transform: translateX(12px); /* Empurra a imagem um pouquinho para a direita para alinhar o centro visual com o texto */
     }
     /* Retorna o alinhamento do texto dos labels e links para esquerda, já que a section foi centralizada */
     .input-group label, .options {

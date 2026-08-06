@@ -8,7 +8,7 @@ from django.contrib.auth import logout # Importação para logout
 from django.contrib.auth.decorators import login_required # Importação para proteger a view de perfil
 import re # Importação para expressões regulares (validação de e-mail)
 
-from django.utils.encoding import force_str # Importação para converter bytes de volta para string (necessário após decodificação base64
+
 import base64
 from django.core.files.base import ContentFile
 import uuid
@@ -41,19 +41,7 @@ def login_view(request):
             if user_profile:
                 # Usuário antigo/existente
                 user = authenticate(request, username=user_profile.user.username, password=senha)
-                
-                # Se falhar, pode ser que a senha atual seja diferente do CPF (já que era livre antes)
-                # Como a regra mudou, vamos checar se a senha digitada bate com os 5 primeiros do CPF.
-                # Se bater, corrigimos a senha dele e logamos.
-                if user is None:
-                    try:
-                        colaborador = Colaborador.objects.get(matricula=matricula)
-                        if colaborador.cpf and senha == colaborador.cpf[:5]:
-                            user_profile.user.set_password(senha)
-                            user_profile.user.save()
-                            user = authenticate(request, username=user_profile.user.username, password=senha)
-                    except Colaborador.DoesNotExist:
-                        pass
+
             else:
                 # Usuário novo (não tem UserProfile)
                 try:
@@ -81,7 +69,7 @@ def login_view(request):
             else:
                 return JsonResponse({'success': False, 'message': 'Matrícula ou senha incorretos.'}, status=401)
                 
-        except Exception as e:
+        except Exception:
             return JsonResponse({'success': False, 'message': 'Erro interno no servidor.'}, status=500)
 
     return render(request, 'login.html')
@@ -116,14 +104,14 @@ def perfil_view(request):
             messages.success(request, 'Celular atualizado com sucesso!')
             return redirect('perfil')
             
-        except Exception as e:
+        except Exception:
             messages.error(request, 'Erro ao atualizar o perfil.')
             
     return render(request, 'perfil.html')
 
 from .models import Pedido, ItemPedido
 
-from datetime import timedelta
+
 from django.db.models import Sum
 
 @login_required(login_url='login')
@@ -441,7 +429,7 @@ def imprimir_guia_view(request, pedido_id):
         messages.error(request, 'Pedido não encontrado')
         return redirect('painel_admin')
 
-from django.db.models import Q, F
+
 from django.db.models.functions import TruncMonth
 from datetime import datetime
 
@@ -652,7 +640,7 @@ def importar_produtos_excel(request):
                         )
                         count_sucesso += 1
 
-                    except Exception as e:
+                    except Exception:
                         count_erros += 1
                         
                 messages.success(request, f'Importação concluída: {count_sucesso} produtos adicionados. ({count_erros} linhas ignoradas/com erro)')

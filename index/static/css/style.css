@@ -49,6 +49,7 @@ body {
 .nav-actions {
     display: flex;
     align-items: center;
+    gap: 1.5rem;
 }
 
 .navbar a {
@@ -414,6 +415,7 @@ footer {
 .nav-links {
     display: flex;
     align-items: center;
+    gap: 1.5rem;
 }
 
 /* Botão flutuante de carrinho oculto por padrão (aparece só no mobile) */

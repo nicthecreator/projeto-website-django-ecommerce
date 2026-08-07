@@ -73,8 +73,8 @@ body {
 }
 
 .logo-nav {
-    width: 100px;
-    height: 40px;
+    width: 98px;
+    height: auto;
 }
 
 /* Cor padrão do botão Sair (Branco) */
@@ -461,46 +461,91 @@ footer {
 }
 
 @media (max-width: 1024px) {
-    /* Navbar Hamburger */
+    /* Navbar Hamburger & Logo Mobile */
+    .logo-nav {
+        transform: translateY(4px);
+    }
+
     .mobile-menu-btn {
         display: block;
     }
     
     .nav-actions {
-        display: none;
+        display: flex;
         flex-direction: column;
         position: absolute;
         top: 100%;
         left: 0;
         width: 100%;
         background-color: #0d1b2a;
-        padding: 0 0 1rem 0;
+        padding: 0;
         box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        
+        /* Configuração da Animação (Começa escondido e um pouco mais alto) */
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-20px);
+        transition: all 0.3s ease-in-out;
+        z-index: -1;
     }
     
     .nav-actions.active {
-        display: flex;
+        /* Estado quando abre (Fica visível e desce suavemente) */
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        z-index: 10;
     }
 
     .nav-links {
         flex-direction: column;
         width: 100%;
         align-items: flex-start;
+        gap: 0;
     }
     
     .nav-links a {
-        padding: 1rem 5%;
+        padding: 0 5%;
         width: 100%;
         margin: 0;
         border-bottom: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        align-items: center;
+        font-size: 1.1rem;
+        height: 65px;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    .nav-links a:last-child {
+        border-bottom: none;
+    }
+
+    .nav-links a i {
+        font-size: 1.4rem;
+        margin-right: 1.2rem;
+        width: 25px;
+        text-align: center;
     }
     
     .cart-btn-nav {
-        margin: 1rem 5% 0 5%;
-        align-self: flex-start;
-        background: #e63946;
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
+        margin: 0 !important;
+        align-self: center;
+        background: transparent !important;
+        padding: 0 !important;
+        border-radius: 0;
+    }
+
+    .quick-text {
+        display: none !important;
+    }
+
+    .quick-icon-link {
+        font-size: 1.8rem;
+    }
+
+    .mobile-menu-btn {
+        font-size: 2rem;
     }
 
     /* Hero Banner */

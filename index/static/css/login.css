@@ -202,8 +202,9 @@ body {
     .login-section {
         width: 100%;
         flex: 1;
-        padding: 1.5rem;
+        padding: 3rem 1.5rem 1.5rem 1.5rem;
         text-align: center; /* Centraliza o logo no mobile */
+        align-items: flex-start; /* Joga o conteúdo para cima em vez de ficar no centro vertical */
     }
     .image-section {
         display: none; /* Oculta a imagem em telas muito pequenas (ex: mobile) */

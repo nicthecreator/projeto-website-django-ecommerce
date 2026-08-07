@@ -8,7 +8,7 @@
     <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}?v=2">
     
     <!-- CSS Global -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1.5">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1.9">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     {% block extra_head %}{% endblock %}
@@ -21,7 +21,10 @@
     
     {% include "global/partials/navbar.html" %}
 
-    {% block content %}{% endblock %}
+    <!-- Container apenas para o conteúdo, assim o menu (navbar) não pisca na transição -->
+    <div id="page-content-wrapper" class="page-transition">
+        {% block content %}{% endblock %}
+    </div>
 
     {% include "global/partials/carrinho_sidebar.html" %}
 
@@ -51,6 +54,26 @@
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        
+        /* Transição Suave e Elegante (Apenas no Conteúdo) */
+        .page-transition {
+            opacity: 0;
+            animation: slideFadeIn 0.3s ease-out forwards;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .page-transition-out {
+            opacity: 0 !important;
+            transition: opacity 0.2s ease-out;
+        }
+        
+        @keyframes slideFadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
     </style>
 
     <script>
@@ -62,6 +85,41 @@
         function closeErrorModal() {
             document.getElementById('errorModal').style.display = 'none';
         }
+
+        // Lógica Global de Transição de Páginas
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const hrefAttr = this.getAttribute('href');
+                    
+                    // Ignora cliques que não devem fazer transição
+                    if (
+                        !this.href || 
+                        this.target === '_blank' || 
+                        e.ctrlKey || e.metaKey || e.shiftKey ||
+                        (hrefAttr && hrefAttr.startsWith('#')) || 
+                        (hrefAttr && hrefAttr.startsWith('javascript:')) ||
+                        this.hasAttribute('download')
+                    ) {
+                        return;
+                    }
+                    
+                    e.preventDefault();
+                    const targetUrl = this.href;
+                    
+                    // Inicia o fade-out apenas no container de conteúdo
+                    const contentWrapper = document.getElementById('page-content-wrapper');
+                    if (contentWrapper) {
+                        contentWrapper.classList.add('page-transition-out');
+                    }
+                    
+                    // Redireciona logo após a animação rápida (150ms)
+                    setTimeout(() => {
+                        window.location.href = targetUrl;
+                    }, 150);
+                });
+            });
+        });
     </script>
     
     {% block extra_js %}{% endblock %}

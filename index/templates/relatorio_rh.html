@@ -3,6 +3,60 @@
 
 {% block title %}PHD Store - Relatório RH{% endblock %}
 
+{% block extra_head %}
+    <style>
+        .rh-filter-select {
+            padding: 0.8rem 2.5rem 0.8rem 1rem; /* Mais espaço na direita para a seta */
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background-color: #f8fafc;
+            color: #1e293b;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            min-width: 160px;
+            /* Seta customizada para não ficar grudada na borda */
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231e293b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.2em;
+        }
+        .rh-filter-select:hover {
+            border-color: #94a3b8;
+        }
+        .rh-filter-select:focus {
+            border-color: #3b82f6;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        .rh-filter-btn {
+            background-color: #1d3557;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .rh-filter-btn:hover {
+            background-color: #e63946;
+            transform: translateY(-2px);
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
 <main class="container" style="margin-top: 2rem;">
     <h2 style="color: #1d3557; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
@@ -13,7 +67,7 @@
         <form method="GET" action="{% url 'relatorio_rh' %}" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
             <div>
                 <label for="mes" style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 5px;">Mês</label>
-                <select name="mes" id="mes" style="padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 4px; min-width: 150px;">
+                <select name="mes" id="mes" class="rh-filter-select">
                     <option value="">Todos os Meses</option>
                     <option value="1" {% if mes_selecionado == '1' %}selected{% endif %}>Janeiro</option>
                     <option value="2" {% if mes_selecionado == '2' %}selected{% endif %}>Fevereiro</option>
@@ -32,7 +86,7 @@
             
             <div>
                 <label for="ano" style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 5px;">Ano</label>
-                <select name="ano" id="ano" style="padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 4px; min-width: 120px;">
+                <select name="ano" id="ano" class="rh-filter-select">
                     <option value="">Todos os Anos</option>
                     {% for a in anos_disponiveis %}
                     <option value="{{ a }}" {% if ano_selecionado == a|stringformat:"s" %}selected{% endif %}>{{ a }}</option>
@@ -41,7 +95,7 @@
             </div>
             
             <div>
-                <button type="submit" class="btn-action" style="padding: 0.6rem 1.2rem; display: flex; align-items: center; gap: 8px;">
+                <button type="submit" class="rh-filter-btn">
                     <i class="fa-solid fa-filter"></i> Filtrar
                 </button>
             </div>
